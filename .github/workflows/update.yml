@@ -54,6 +54,10 @@ jobs:
         if: ${{ github.event.inputs.bootstrap != 'true' }}
         run: python scripts/update_data.py
 
+      - name: মৌলিক তথ্য (Paid-up, P/E — সপ্তাহে একবার)
+        run: python scripts/update_fundamentals.py
+        continue-on-error: true
+
       - name: ফেজ হিসাব
         run: python -I scripts/compute_phases.py
 
