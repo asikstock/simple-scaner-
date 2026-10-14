@@ -1,0 +1,76 @@
+name: DSE ডেটা ও ফেজ আপডেট
+
+on:
+  schedule:
+    # সব সময় UTC। ঢাকা = UTC+6। বাজার বন্ধ হয় ঢাকার ২:৩০ PM; চূড়ান্ত দাম আসার পর কয়েকবার চেষ্টা (GitHub-এর cron দেরি/বাদ পড়তে পারে, তাই একাধিক)।
+    - cron: '50 8 * * 0-4'    # ঢাকা ২:৫০ PM
+    - cron: '35 9 * * 0-4'    # ৩:৩৫ PM
+    - cron: '25 10 * * 0-4'   # ৪:২৫ PM
+    - cron: '40 11 * * 0-4'   # ৫:৪০ PM
+    - cron: '10 13 * * 0-4'   # ৭:১০ PM
+    - cron: '40 16 * * 0-4'   # ১০:৪০ PM
+    - cron: '25 1 * * 1-5'    # পরদিন সকাল ৭:২৫ (আগের রাতে যা বাদ পড়েছে)
+  workflow_dispatch:
+    inputs:
+      bootstrap:
+        description: 'সব কোম্পানির পুরনো ইতিহাস ভরবেন? (true বা false)'
+        default: 'false'
+      backtest:
+        description: 'ব্যাকটেস্ট আবার চালাবেন? (true বা false)'
+        default: 'false'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: dse-data
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: নির্ভরতা
+        run: pip install pandas numpy
+
+      - name: টেস্ট
+        run: python tests/test_update_data.py
+        continue-on-error: true
+
+      - name: পুরনো ইতিহাস ভরা (২ বছর)
+        if: ${{ github.event.inputs.bootstrap == 'true' }}
+        run: python scripts/update_data.py --bootstrap --backfill --days 760
+
+      - name: আজকের ডেটা যোগ
+        if: ${{ github.event.inputs.bootstrap != 'true' }}
+        run: python scripts/update_data.py
+
+      - name: ফেজ হিসাব
+        run: python -I scripts/compute_phases.py
+
+      - name: ব্যাকটেস্ট (শুধু চাইলে)
+        if: ${{ github.event.inputs.backtest == 'true' }}
+        run: python -I tools/backtest.py
+        continue-on-error: true
+
+      - name: পরিবর্তন সেভ
+        run: |
+          git config user.name "scanner-bot"
+          git config user.email "scanner-bot@users.noreply.github.com"
+          git add docs/data -A
+          if git diff --cached --quiet; then
+            echo "নতুন ডেটা নেই (ছুটির দিন বা আগেই যোগ হয়েছে)"
+            exit 0
+          fi
+          git commit -m "data: $(date -u +%F\ %H:%M)"
+          git pull --rebase -X ours origin main || { git rebase --abort || true; git pull --no-rebase -X ours origin main; }
+          git push

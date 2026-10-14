@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="bn">
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="data:,">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>সিম্পল স্ক্যানার — DSE ফেজ</title>
+<style>
+:root{
+  --bg:#f6f7f9; --card:#fff; --ink:#15191f; --mute:#5f6b7a; --line:#e3e7ec; --acc:#1d4ed8; --head:#eef1f5;
+  --accumulation:#0f766e; --markup:#15803d; --reaccumulation:#4d7c0f;
+  --distribution:#b45309; --markdown:#b91c1c; --redistribution:#c2410c; --none:#6b7280;
+}
+@media (prefers-color-scheme: dark){
+  :root{ --bg:#0f1318; --card:#171c23; --ink:#e8ecf1; --mute:#9aa6b5; --line:#2a323c; --acc:#7aa2ff; --head:#1d242d;
+    --accumulation:#2dd4bf; --markup:#4ade80; --reaccumulation:#a3e635; --distribution:#fbbf24; --markdown:#f87171; --redistribution:#fb923c; --none:#9ca3af; }
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,"Segoe UI","Noto Sans Bengali","Kalpurush",sans-serif}
+.wrap{max-width:1180px;margin:0 auto;padding:16px}
+h1{font-size:1.35rem;margin:4px 0 2px}
+.sub{color:var(--mute);font-size:.88rem;margin:0 0 12px}
+.meta{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:.84rem;color:var(--mute);margin-bottom:10px}
+.meta b{color:var(--ink)}
+.tabs{display:flex;gap:6px;overflow-x:auto;padding:2px 0 8px;scrollbar-width:thin}
+.tab{flex:0 0 auto;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:7px 12px;border-radius:999px;cursor:pointer;font:inherit;font-size:.88rem;display:flex;gap:6px;align-items:center;white-space:nowrap}
+.tab .n{background:var(--head);border-radius:999px;padding:0 7px;font-size:.78rem;color:var(--mute)}
+.tab[aria-selected=true]{border-color:var(--c,var(--acc));box-shadow:inset 0 0 0 1px var(--c,var(--acc));font-weight:600}
+.tab .dot{width:9px;height:9px;border-radius:50%;background:var(--c,var(--acc))}
+.box{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:8px 0}
+.desc{font-size:.9rem}
+.desc b{color:var(--c,var(--ink))}
+.ctrl{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;margin:8px 0}
+.ctrl input[type=search],.ctrl select{font:inherit;font-size:.9rem;padding:7px 10px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink);min-width:0}
+.ctrl label{font-size:.88rem;display:flex;gap:6px;align-items:center;cursor:pointer}
+.tw{overflow:auto;border:1px solid var(--line);border-radius:12px;background:var(--card);max-height:75vh}
+table{border-collapse:separate;border-spacing:0;width:100%;font-size:.88rem}
+th,td{padding:7px 9px;text-align:right;white-space:nowrap;border-bottom:1px solid var(--line)}
+th{position:sticky;top:0;background:var(--head);cursor:pointer;user-select:none;z-index:2;font-weight:600;font-size:.82rem}
+th.l,td.l{text-align:left}
+th .ar{opacity:.6;font-size:.7rem}
+td.code,th.code{position:sticky;left:0;background:var(--card);z-index:1;font-weight:600}
+th.code{background:var(--head);z-index:3}
+tr:hover td{background:var(--head)}
+tr:hover td.code{background:var(--head)}
+.badge{display:inline-block;padding:1px 8px;border-radius:999px;font-size:.78rem;font-weight:600;color:#fff;background:var(--c)}
+.new{font-size:.7rem;border:1px solid var(--c);color:var(--c);border-radius:4px;padding:0 4px;margin-left:5px}
+.up{color:var(--markup)} .dn{color:var(--markdown)}
+.sc{display:inline-flex;align-items:center;gap:6px;justify-content:flex-end}
+.bar{width:46px;height:6px;background:var(--line);border-radius:3px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--c,var(--acc))}
+.empty{padding:28px;text-align:center;color:var(--mute)}
+details summary{cursor:pointer;font-weight:600}
+.bt table{font-size:.84rem}
+.bt td,.bt th{cursor:default}
+.note{font-size:.84rem;color:var(--mute)}
+ul.k{margin:8px 0 0;padding-left:20px;font-size:.88rem}
+ul.k li{margin:3px 0}
+footer{color:var(--mute);font-size:.8rem;margin:16px 0 30px}
+.warn{border-left:3px solid var(--distribution);padding-left:10px}
+@media (max-width:640px){ .wrap{padding:10px} th,td{padding:6px 7px} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>সিম্পল স্ক্যানার</h1>
+  <p class="sub">ঢাকা স্টক এক্সচেঞ্জ · শুধু <b>দাম</b>, <b>ভলিউম</b> আর <b>মুভিং এভারেজ</b> (SMA 20/50/100) দিয়ে প্রতিটি শেয়ারের ওয়াইকফ ফেজ নির্ধারণ</p>
+  <div class="meta" id="meta">লোড হচ্ছে…</div>
+
+  <div class="tabs" id="tabs" role="tablist" aria-label="ফেজ"></div>
+  <div class="box desc" id="desc"></div>
+
+  <div class="ctrl">
+    <input type="search" id="q" placeholder="কোড বা সেক্টর খুঁজুন" aria-label="খুঁজুন">
+    <select id="sector" aria-label="সেক্টর"><option value="">সব সেক্টর</option></select>
+    <label><input type="checkbox" id="liq" checked> শুধু লিকুইড শেয়ার <span class="note">(২০ দিনের গড় লেনদেন ≥ ৩০ লাখ টাকা)</span></label>
+    <span class="note" id="cnt"></span>
+  </div>
+
+  <div class="tw"><table id="tbl"><thead></thead><tbody></tbody></table></div>
+
+  <div class="box bt" id="bt" style="margin-top:16px"></div>
+
+  <footer>
+    শিক্ষামূলক টুল, বিনিয়োগ পরামর্শ নয়। ফেজ হলো অতীত দাম-ভলিউমের ওপর নিয়মভিত্তিক লেবেল; এটি ভবিষ্যৎ লাভের নিশ্চয়তা দেয় না। ডেটা: DSE (old.dsebd.org), প্রতিদিন কয়েকবার অটো আপডেট।
+  </footer>
+</div>
+
+<script>
+"use strict";
+const PH = [
+  {k:'Accumulation',  bn:'সঞ্চয়',        c:'var(--accumulation)',   bull:true,
+   d:'আগে দাম নেমেছে, এখন সাইডওয়ে রেঞ্জে আছে আর ভলিউম <b>কেনার দিকে</b> (দাম বাড়ার দিনের ভলিউম > কমার দিনের ভলিউম)।'},
+  {k:'Markup',        bn:'ঊর্ধ্বমুখী',    c:'var(--markup)',         bull:true,
+   d:'দাম &gt; SMA20 &gt; SMA50, SMA50 ঊর্ধ্বমুখী আর ভলিউম <b>কেনার দিকে</b>। ট্রেন্ড চলছে।'},
+  {k:'Re-accumulation',bn:'পুনঃসঞ্চয়',   c:'var(--reaccumulation)', bull:true,
+   d:'আগে দাম উঠেছে, এখন সাইডওয়ে বিরতি, ভলিউম এখনও <b>কেনার দিকে</b> বা নিরপেক্ষ।'},
+  {k:'Distribution',  bn:'বিতরণ',         c:'var(--distribution)',   bull:false,
+   d:'আগে দাম উঠেছে, এখন সাইডওয়ে রেঞ্জ আর ভলিউম <b>বেচার দিকে</b> (দাম কমার দিনের ভলিউম বেশি)।'},
+  {k:'Markdown',      bn:'নিম্নমুখী',     c:'var(--markdown)',       bull:false,
+   d:'দাম &lt; SMA20 &lt; SMA50, SMA50 নিম্নমুখী আর ভলিউম <b>বেচার দিকে</b>। ট্রেন্ড নিচে।'},
+  {k:'Re-distribution',bn:'পুনঃবিতরণ',    c:'var(--redistribution)', bull:false,
+   d:'আগে দাম নেমেছে, এখন সাইডওয়ে বাউন্স, কিন্তু ভলিউম <b>বেচার দিকে</b>। বাউন্স দুর্বল।'},
+];
+const ALL = {k:'', bn:'মোট', c:'var(--acc)', d:'সব শেয়ার একসঙ্গে: ফেজের ক্রমে (সঞ্চয় → ঊর্ধ্বমুখী → পুনঃসঞ্চয় → বিতরণ → নিম্নমুখী → পুনঃবিতরণ), প্রতি ফেজে স্কোর বেশি থেকে কম। যাদের স্পষ্ট ফেজ নেই তারা সবার শেষে।'};
+const PMAP = Object.fromEntries(PH.map((p,i)=>[p.k,{...p,i}]));
+const SCORE_HELP = 'স্কোর (০–১০০): ভলিউমের একমুখিতা (৩০) + MA-র সাজানো (৩০) + রেঞ্জ/ট্রেন্ডের স্পষ্টতা (২০) + ভলিউমের আচরণ (১০) + ফেজে টানা থাকার দিন (১০)। বেশি = ফেজ বেশি স্পষ্ট।';
+
+let DATA=null, BT=null, tab='', sortKey=null, sortDir=-1;
+const $ = id => document.getElementById(id);
+const esc = s => String(s??'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmt = (x,d=2) => x==null ? '–' : Number(x).toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d});
+const int = x => x==null ? '–' : Number(x).toLocaleString('en-US');
+
+const COLS = [
+  {k:'c',   t:'কোড',        cls:'l code', get:s=>s.c, help:'ট্রেডিং কোড'},
+  {k:'s',   t:'সেক্টর',     cls:'l',      get:s=>s.s||'', help:''},
+  {k:'p',   t:'ফেজ',        cls:'l',      get:s=>s.p?PMAP[s.p].i:99, help:'', onlyAll:true},
+  {k:'sc',  t:'স্কোর',      get:s=>s.sc, help:SCORE_HELP},
+  {k:'d',   t:'ফেজে দিন',   get:s=>s.d, help:'টানা কত ট্রেডিং-দিন এই ফেজে আছে (১ = আজই ঢুকেছে)'},
+  {k:'cl',  t:'দাম',        get:s=>s.cl, help:'শেষ ক্লোজ (টাকা)'},
+  {k:'ch',  t:'পরিবর্তন%',  get:s=>s.ch, help:'আগের দিনের তুলনায়'},
+  {k:'v',   t:'ভলিউম',      get:s=>s.v, help:'আজকের ভলিউম (শেয়ার)'},
+  {k:'val', t:'গড় লেনদেন', get:s=>s.val, help:'২০ দিনের গড় দৈনিক লেনদেন (মিলিয়ন টাকা)'},
+  {k:'m20', t:'SMA20',      get:s=>s.m20},
+  {k:'m50', t:'SMA50',      get:s=>s.m50},
+  {k:'m100',t:'SMA100',     get:s=>s.m100},
+  {k:'vb',  t:'ভলিউম ব্যালান্স', get:s=>s.vb, help:'শেষ ২০ দিনে (আপ-ডে ভলিউম − ডাউন-ডে ভলিউম) ÷ মোট। +১ = পুরোটাই কেনার দিকে, −১ = বেচার দিকে'},
+  {k:'w',   t:'রেঞ্জ%',     get:s=>s.w, help:'শেষ ৪০ দিনের উচ্চ-নিম্নের প্রস্থ (মধ্যমানের %)'},
+  {k:'sp',  t:'৫০ দিন',     get:null, nosort:true, help:'শেষ ৫০ দিনের ক্লোজ'},
+];
+
+function spark(a, color){
+  const v=(a||[]).filter(x=>x!=null); if(v.length<2) return '';
+  const W=88,H=24,mn=Math.min(...v),mx=Math.max(...v),r=(mx-mn)||1;
+  const pts=v.map((y,i)=>`${(i/(v.length-1)*W).toFixed(1)},${(H-2-(y-mn)/r*(H-4)).toFixed(1)}`).join(' ');
+  return `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" aria-hidden="true"><polyline fill="none" stroke="${color}" stroke-width="1.5" points="${pts}"/></svg>`;
+}
+
+function buildTabs(){
+  const cnt = {}; DATA.stocks.forEach(s=>{ if(passBase(s)) cnt[s.p||''] = (cnt[s.p||'']||0)+1; });
+  const total = DATA.stocks.filter(passBase).length;
+  const el = $('tabs'); el.innerHTML='';
+  [ALL,...PH].forEach(p=>{
+    const b=document.createElement('button'); b.className='tab'; b.type='button'; b.setAttribute('role','tab');
+    b.setAttribute('aria-selected', String(p.k===tab)); b.style.setProperty('--c', p.c);
+    const n = p.k ? (cnt[p.k]||0) : total;
+    b.innerHTML = `<span class="dot"></span>${p.k?esc(p.k)+' <span class="note">'+esc(p.bn)+'</span>':'মোট'}<span class="n">${n}</span>`;
+    b.onclick=()=>{ tab=p.k; sortKey=null; render(); };
+    el.appendChild(b);
+  });
+}
+function passBase(s){
+  if($('liq').checked && !s.lq) return false;
+  const sec=$('sector').value; if(sec && s.s!==sec) return false;
+  const q=$('q').value.trim().toLowerCase();
+  if(q && !(s.c.toLowerCase().includes(q) || (s.s||'').toLowerCase().includes(q))) return false;
+  return true;
+}
+
+function render(){
+  if(!DATA) return;
+  buildTabs();
+  const cur = tab ? PMAP[tab] : ALL;
+  $('desc').style.setProperty('--c', cur.c);
+  $('desc').innerHTML = tab ? `<b>${esc(cur.k)} (${esc(cur.bn)})</b> — ${cur.d} স্কোর যত বেশি, ফেজটা তত স্পষ্ট; তাই সবচেয়ে ওপরের শেয়ার এই ফেজে সবচেয়ে জোরালো।` : `<b>মোট</b> — ${cur.d}`;
+  let rows = DATA.stocks.filter(s=>passBase(s) && (!tab || s.p===tab));
+  const cols = COLS.filter(c=>!c.onlyAll || !tab);
+  const key = sortKey && cols.find(c=>c.k===sortKey);
+  rows.sort((a,b)=>{
+    if(key){
+      const x=key.get(a), y=key.get(b);
+      if(x==null && y==null) return 0; if(x==null) return 1; if(y==null) return -1;
+      const c = typeof x==='string' ? (x<y?-1:x>y?1:0) : x-y;
+      return sortDir<0 ? -c : c;
+    }
+    const pa=a.p?PMAP[a.p].i:99, pb=b.p?PMAP[b.p].i:99;
+    return pa-pb || b.sc-a.sc || b.d-a.d || (a.c<b.c?-1:1);
+  });
+  $('cnt').textContent = `${rows.length}টি শেয়ার`;
+  const th = cols.map(c=>`<th class="${c.cls||''}" ${c.nosort?'':`data-k="${c.k}"`} title="${esc(c.help||'')}">${esc(c.t)}${key&&key.k===c.k?` <span class="ar">${sortDir<0?'▼':'▲'}</span>`:''}</th>`).join('');
+  $('tbl').tHead.innerHTML = `<tr>${th}</tr>`;
+  $('tbl').tHead.querySelectorAll('th[data-k]').forEach(h=>h.onclick=()=>{
+    const k=h.dataset.k; if(sortKey===k) sortDir=-sortDir; else {sortKey=k; sortDir=-1;} render();
+  });
+  if(!rows.length){ $('tbl').tBodies[0].innerHTML=`<tr><td class="empty" colspan="${cols.length}">এই ফিল্টারে কোনো শেয়ার নেই। ওপরের "শুধু লিকুইড" টিক তুলে দেখুন।</td></tr>`; return; }
+  $('tbl').tBodies[0].innerHTML = rows.map(s=>{
+    const p = s.p?PMAP[s.p]:null, col = p?p.c:'var(--none)';
+    const cell = {
+      c:`<td class="l code">${esc(s.c)}</td>`,
+      s:`<td class="l note">${esc(s.s)}</td>`,
+      p:`<td class="l">${p?`<span class="badge" style="--c:${col}">${esc(p.k)}</span>`:'<span class="note">অনির্দিষ্ট</span>'}</td>`,
+      sc:`<td><span class="sc" style="--c:${col}">${p?`<b>${s.sc}</b>${s.sc>=DATA.config.strong_score?' ★':''}<span class="bar"><i style="width:${s.sc}%"></i></span>`:'–'}</span></td>`,
+      d:`<td>${p?s.d+(s.d===1?`<span class="new" style="--c:${col}">নতুন</span>`:''):'–'}</td>`,
+      cl:`<td>${fmt(s.cl)}</td>`,
+      ch:`<td class="${s.ch>0?'up':s.ch<0?'dn':''}">${s.ch==null?'–':(s.ch>0?'+':'')+fmt(s.ch)}</td>`,
+      v:`<td>${int(s.v)}</td>`, val:`<td>${fmt(s.val,1)}</td>`,
+      m20:`<td class="${s.cl>s.m20?'up':'dn'}">${fmt(s.m20)}</td>`, m50:`<td class="${s.cl>s.m50?'up':'dn'}">${fmt(s.m50)}</td>`, m100:`<td class="${s.cl>s.m100?'up':'dn'}">${fmt(s.m100)}</td>`,
+      vb:`<td class="${s.vb>0?'up':s.vb<0?'dn':''}">${s.vb==null?'–':(s.vb>0?'+':'')+fmt(s.vb)}</td>`,
+      w:`<td>${s.w==null?'–':fmt(s.w,1)}</td>`,
+      sp:`<td>${spark(s.sp,col)}</td>`,
+    };
+    return `<tr>${cols.map(c=>cell[c.k]).join('')}</tr>`;
+  }).join('');
+}
+
+function renderBT(){
+  const el=$('bt'); if(!BT){ el.style.display='none'; return; }
+  const A=BT.phases_all, f=(x,d=2,sg=true)=> x==null||isNaN(x)?'–':(sg&&x>0?'+':'')+Number(x).toFixed(d);
+  const tcls = t => t==null?'':(Math.abs(t)>=2?(t>0?'up':'dn'):'');
+  const rows = PH.map(p=>{ const r=A[p.k], a=r.all.h20, te=r.test.h20;
+    return `<tr><td class="l"><span class="badge" style="--c:${p.c}">${p.k}</span></td><td>${int(r.events)}</td><td>${f(a.net)}%</td><td>${f(a.excess)}%</td><td class="${tcls(a.t)}">${f(a.t,1)}</td><td>${f(te.excess)}% <span class="note">(${te.n})</span></td></tr>`; }).join('');
+  el.innerHTML = `<details open><summary>ব্যাকটেস্ট (${esc(BT.first_date)} থেকে ${esc(BT.generated_for)}, ~২ বছর, ${BT.n_codes}টি কোড)</summary>
+    <p class="note">প্রতিটি শেয়ার কোনো ফেজে <b>নতুন ঢুকলে</b> পরদিন OPEN-এ কিনলে ২০ ট্রেডিং-দিন পরের ক্লোজে কী হতো (খরচ ${BT.cost_pct}% ধরে, শুধু লিকুইড শেয়ার)। "অতিরিক্ত" = সেই দিনের সব লিকুইড শেয়ারের গড়ের চেয়ে কত বেশি। t-মান মাসভিত্তিক ক্লাস্টার করা (|t| ≥ ২ হলে মোটামুটি টেকসই)। TEST = ${esc(BT.split_date)}-এর পরের অর্ধ, যা থ্রেশহোল্ড বাছাইয়ে ব্যবহার হয়নি। বেসলাইন (সব লিকুইড শেয়ার, ২০ দিন): ${f(BT.baseline.h20)}%।</p>
+    <div class="tw" style="max-height:none"><table><thead><tr><th class="l">ফেজ</th><th>ইভেন্ট</th><th>২০ দিনে নেট রিটার্ন</th><th>অতিরিক্ত</th><th>t</th><th>TEST অতিরিক্ত</th></tr></thead><tbody>${rows}</tbody></table></div>
+    <ul class="k">
+      <li><b>সবচেয়ে টেকসই ধারা:</b> <b>Markdown</b> ফেজে ঢোকা শেয়ার বাজারের গড়ের চেয়ে খারাপ করেছে (${f(A.Markdown.all.h20.excess)}%, t = ${f(A.Markdown.all.h20.t,1)}, TEST-এও ${f(A.Markdown.test.h20.excess)}%)। তাই এটাকে "এড়ানোর" সংকেত হিসেবে ধরা যায় (তবে ৬টি ফেজ একসঙ্গে পরীক্ষা করায় এটাও নিশ্চিত প্রমাণ নয়)।</li>
+      <li><b>Accumulation</b> বাজারের চেয়ে ভালো করেছে (${f(A.Accumulation.all.h20.excess)}%, TEST-এ ${f(A.Accumulation.test.h20.excess)}%, t = ${f(A.Accumulation.all.h20.t,1)}), কিন্তু প্রমাণ সীমারেখার কাছাকাছি, নিশ্চিত নয়।</li>
+      <li><b>বাকি ফেজগুলো (Markup, Re-accumulation, Distribution, Re-distribution)</b> থেকে ভরসাযোগ্য কিছু বলা যায় না: t-মান ছোট, ফল এক অর্ধে ভালো তো অন্য অর্ধে উল্টো।</li>
+      <li><b>স্কোরের ক্রম:</b> বুলিশ ফেজে কাজ করেছে (Accumulation: উচ্চ-স্কোর গ্রুপ ${f(A.Accumulation.score_split.hi_excess)}% বনাম নিম্ন ${f(A.Accumulation.score_split.lo_excess)}%; Re-accumulation: ${f(A['Re-accumulation'].score_split.hi_excess)}% বনাম ${f(A['Re-accumulation'].score_split.lo_excess)}%)। বেয়ারিশ ফেজে ভরসাযোগ্য নয়: Markdown-এ উচ্চ-স্কোর গ্রুপ ${f(A.Markdown.score_split.hi_excess)}% বনাম নিম্ন ${f(A.Markdown.score_split.lo_excess)}%, অর্থাৎ বেয়ারিশ ট্যাবে স্কোর শুধু ফেজ কতটা স্পষ্ট তা বলে, কতটা পড়বে তা নয়।</li>
+    </ul>
+    <p class="note warn">থ্রেশহোল্ড (রেঞ্জ প্রস্থ ≤ ${(BT.config.max_width*100).toFixed(0)}%, আগের ট্রেন্ড ≥ ${(BT.config.prior_pct*100).toFixed(0)}%) ${BT.grid_size}টি সংমিশ্রণ থেকে শুধু আগের অর্ধ (TRAIN) দেখে বাছা; বাছাই-না-করা সংমিশ্রণের গড়ের চেয়ে বাছাইটা TEST-এ খুব বেশি ভালো হয়নি, তাই আলাদা করে "টিউন করা" সুবিধা ধরা ঠিক হবে না। একটা বাজার-চক্রের ২ বছর খুবই অল্প; এটা বাজার-কাঠামো বোঝার ছক, নিশ্চিত কেনা-বেচার সংকেত নয়।</p>
+  </details>`;
+}
+
+async function init(){
+  try{
+    const [a,b]=await Promise.all([fetch('data/phases.json',{cache:'no-cache'}), fetch('data/backtest.json').catch(()=>null)]);
+    DATA = await a.json();
+    try{ BT = b && b.ok ? await b.json() : null; }catch(e){ BT=null; }
+  }catch(e){ $('meta').textContent='ডেটা লোড করা যায়নি: '+e; return; }
+  const secs=[...new Set(DATA.stocks.map(s=>s.s).filter(Boolean))].sort();
+  $('sector').innerHTML += secs.map(s=>`<option>${esc(s)}</option>`).join('');
+  let upd='';
+  try{ upd=new Date(DATA.updated_utc).toLocaleString('bn-BD',{timeZone:'Asia/Dhaka',dateStyle:'medium',timeStyle:'short'}); }catch(e){ upd=DATA.updated_utc; }
+  $('meta').innerHTML = `<span>ডেটার শেষ তারিখ: <b>${esc(DATA.last_date)}</b></span><span>আপডেট: <b>${esc(upd)}</b></span><span>শেয়ার: <b>${DATA.n_all}</b> (লিকুইড <b>${DATA.n_liquid}</b>)</span>`;
+  ['q','sector','liq'].forEach(id=>$(id).addEventListener(id==='q'?'input':'change',render));
+  renderBT(); render();
+}
+init();
+</script>
+</body>
+</html>
