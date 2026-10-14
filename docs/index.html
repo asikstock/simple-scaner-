@@ -8,12 +8,13 @@
 <style>
 :root{
   --bg:#f6f7f9; --card:#fff; --ink:#15191f; --mute:#5f6b7a; --line:#e3e7ec; --acc:#1d4ed8; --head:#eef1f5;
-  --accumulation:#0f766e; --markup:#15803d; --reaccumulation:#4d7c0f;
-  --distribution:#b45309; --markdown:#b91c1c; --redistribution:#c2410c; --none:#6b7280;
+  --pa:#0f766e; --pb:#0369a1; --pc:#7c3aed; --pd:#4d7c0f; --pe:#15803d; --setup:#1d4ed8; --watch:#a21caf;
+  --distribution:#b45309; --markdown:#b91c1c; --none:#6b7280; --up:#15803d; --dn:#b91c1c;
 }
 @media (prefers-color-scheme: dark){
   :root{ --bg:#0f1318; --card:#171c23; --ink:#e8ecf1; --mute:#9aa6b5; --line:#2a323c; --acc:#7aa2ff; --head:#1d242d;
-    --accumulation:#2dd4bf; --markup:#4ade80; --reaccumulation:#a3e635; --distribution:#fbbf24; --markdown:#f87171; --redistribution:#fb923c; --none:#9ca3af; }
+    --pa:#2dd4bf; --pb:#38bdf8; --pc:#a78bfa; --pd:#a3e635; --pe:#4ade80; --setup:#7aa2ff; --watch:#e879f9;
+    --distribution:#fbbf24; --markdown:#f87171; --none:#9ca3af; --up:#4ade80; --dn:#f87171; }
 }
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
@@ -46,7 +47,7 @@ tr:hover td{background:var(--head)}
 tr:hover td.code{background:var(--head)}
 .badge{display:inline-block;padding:1px 8px;border-radius:999px;font-size:.78rem;font-weight:600;color:#fff;background:var(--c)}
 .new{font-size:.7rem;border:1px solid var(--c);color:var(--c);border-radius:4px;padding:0 4px;margin-left:5px}
-.up{color:var(--markup)} .dn{color:var(--markdown)}
+.up{color:var(--up)} .dn{color:var(--dn)}
 .sc{display:inline-flex;align-items:center;gap:6px;justify-content:flex-end}
 .bar{width:46px;height:6px;background:var(--line);border-radius:3px;overflow:hidden}
 .bar i{display:block;height:100%;background:var(--c,var(--acc))}
@@ -60,13 +61,23 @@ ul.k li{margin:3px 0}
 footer{color:var(--mute);font-size:.8rem;margin:16px 0 30px}
 .warn{border-left:3px solid var(--distribution);padding-left:10px}
 @media (max-width:640px){ .wrap{padding:10px} th,td{padding:6px 7px} }
+.chip{display:inline-block;border:1px solid var(--line);border-radius:4px;padding:0 5px;margin:0 2px 0 0;font-size:.72rem;color:var(--mute);background:var(--head)}
+.chip.hot{border-color:var(--c,var(--acc));color:var(--c,var(--acc))}
+.chip.bad{border-color:var(--markdown);color:var(--markdown)}
+.act{white-space:normal;min-width:190px;text-align:left;font-size:.82rem}
+.tag-ok{color:var(--up);font-weight:700}
+.tag-no{color:var(--mute)}
+.rules table{font-size:.82rem} .rules td,.rules th{white-space:normal;text-align:left;vertical-align:top;cursor:default}
+.formula{font-family:ui-monospace,Menlo,Consolas,monospace;background:var(--head);border-radius:8px;padding:8px 10px;margin:6px 0;font-size:.86rem;overflow:auto;white-space:nowrap}
+.alert{border-left:3px solid var(--watch);padding:6px 10px;background:var(--head);border-radius:6px;font-size:.86rem;margin:8px 0}
 </style>
 </head>
 <body>
 <div class="wrap">
   <h1>সিম্পল স্ক্যানার</h1>
-  <p class="sub">ঢাকা স্টক এক্সচেঞ্জ · শুধু <b>দাম</b>, <b>ভলিউম</b> আর <b>মুভিং এভারেজ</b> (SMA 20/50/100) দিয়ে প্রতিটি শেয়ারের ওয়াইকফ ফেজ নির্ধারণ</p>
+  <p class="sub">ঢাকা স্টক এক্সচেঞ্জ · অপারেটর-চালিত প্রবণতা: <b>ওয়াইকফ Phase A–E</b>, <b>ভলিউম রেশিও (VR)</b>, <b>স্মার্ট মানি (CHOCH · OB · FVG)</b> ও <b>১:৩ রিস্ক-রিওয়ার্ড</b> — গবেষণা-রিপোর্টের সূত্র অনুযায়ী</p>
   <div class="meta" id="meta">লোড হচ্ছে…</div>
+  <div class="alert" id="fundwarn" style="display:none"></div>
 
   <div class="tabs" id="tabs" role="tablist" aria-label="ফেজ"></div>
   <div class="box desc" id="desc"></div>
@@ -80,56 +91,88 @@ footer{color:var(--mute);font-size:.8rem;margin:16px 0 30px}
 
   <div class="tw"><table id="tbl"><thead></thead><tbody></tbody></table></div>
 
+  <div class="box rules" id="rules" style="margin-top:16px"></div>
   <div class="box bt" id="bt" style="margin-top:16px"></div>
 
   <footer>
-    শিক্ষামূলক টুল, বিনিয়োগ পরামর্শ নয়। ফেজ হলো অতীত দাম-ভলিউমের ওপর নিয়মভিত্তিক লেবেল; এটি ভবিষ্যৎ লাভের নিশ্চয়তা দেয় না। ডেটা: DSE (old.dsebd.org), প্রতিদিন কয়েকবার অটো আপডেট।
+    শিক্ষামূলক টুল, বিনিয়োগ পরামর্শ নয়। ফেজ ও সেটআপ হলো অতীত দাম-ভলিউমের ওপর নিয়মভিত্তিক লেবেল; এটি ভবিষ্যৎ লাভের নিশ্চয়তা দেয় না। অপারেটর-চালিত শেয়ারে হঠাৎ সার্কিট-হল্ট ও ধসের ঝুঁকি আছে। ডেটা: DSE (old.dsebd.org), প্রতিদিন কয়েকবার অটো আপডেট।
   </footer>
 </div>
 
 <script>
 "use strict";
+/* ---------- ট্যাব ও ফেজের বর্ণনা (রিপোর্টের সারণি অনুযায়ী) ---------- */
 const PH = [
-  {k:'Accumulation',  bn:'সঞ্চয়',        c:'var(--accumulation)',   bull:true,
-   d:'আগে দাম নেমেছে, এখন সাইডওয়ে রেঞ্জে আছে আর ভলিউম <b>কেনার দিকে</b> (দাম বাড়ার দিনের ভলিউম > কমার দিনের ভলিউম)।'},
-  {k:'Markup',        bn:'ঊর্ধ্বমুখী',    c:'var(--markup)',         bull:true,
-   d:'দাম &gt; SMA20 &gt; SMA50, SMA50 ঊর্ধ্বমুখী আর ভলিউম <b>কেনার দিকে</b>। ট্রেন্ড চলছে।'},
-  {k:'Re-accumulation',bn:'পুনঃসঞ্চয়',   c:'var(--reaccumulation)', bull:true,
-   d:'আগে দাম উঠেছে, এখন সাইডওয়ে বিরতি, ভলিউম এখনও <b>কেনার দিকে</b> বা নিরপেক্ষ।'},
-  {k:'Distribution',  bn:'বিতরণ',         c:'var(--distribution)',   bull:false,
-   d:'আগে দাম উঠেছে, এখন সাইডওয়ে রেঞ্জ আর ভলিউম <b>বেচার দিকে</b> (দাম কমার দিনের ভলিউম বেশি)।'},
-  {k:'Markdown',      bn:'নিম্নমুখী',     c:'var(--markdown)',       bull:false,
-   d:'দাম &lt; SMA20 &lt; SMA50, SMA50 নিম্নমুখী আর ভলিউম <b>বেচার দিকে</b>। ট্রেন্ড নিচে।'},
-  {k:'Re-distribution',bn:'পুনঃবিতরণ',    c:'var(--redistribution)', bull:false,
-   d:'আগে দাম নেমেছে, এখন সাইডওয়ে বাউন্স, কিন্তু ভলিউম <b>বেচার দিকে</b>। বাউন্স দুর্বল।'},
+  {k:'Phase A', bn:'পতন রোধ', c:'var(--pa)', bull:true,
+   d:'<b>সেলিং ক্লাইম্যাক্স (SC)</b>: দীর্ঘ পতনের পর এক্সট্রিম ভলিউম স্পাইক (VR ≥ ২.৫) ও নতুন নিম্ন। আগের ২০ দিনের মধ্যে SC হয়েছে আর দাম এখনও SC-র নিচে যায়নি। শুধু পর্যবেক্ষণ — এন্ট্রি নয়।'},
+  {k:'Phase B', bn:'সংগ্রহ', c:'var(--pb)', bull:true,
+   d:'<b>অ্যাকিউমুলেশন রেঞ্জ</b>: পতনের পর সংকীর্ণ রেঞ্জ, সংকুচিত অস্থিরতা (ATR) ও কম ভলিউম। অপারেটর ধীরে জমা করছে। ওয়াচলিস্টে রাখুন — এন্ট্রি নয়।'},
+  {k:'Phase C', bn:'স্প্রিং / লিকুইডিটি ট্র্যাপ', c:'var(--pc)', bull:true,
+   d:'<b>স্প্রিং</b>: লো-ভলিউমে সাপোর্ট ভেঙে নিচে নেমে গত ৫ দিনে আবার সাপোর্টের ওপরে ফিরেছে (সেল-সাইড লিকুইডিটি সুইপ)। স্টপ স্প্রিং লো-র ০.৫% নিচে; RRR ≥ ১:৩ হলে মূলধনের ৩০% দিয়ে প্রাথমিক স্কেলিং-ইন।'},
+  {k:'Phase D', bn:'ব্রেকআউট (SOS / LPS)', c:'var(--pd)', bull:true,
+   d:'<b>Sign of Strength</b>: ভলিউম বৃদ্ধি সহ রেঞ্জের রেজিস্ট্যান্স ভেঙেছে (গত ১৫ দিনে)। <b>LPS retest</b> (লেভেলের কাছে ফিরে কম ভলিউমে) + RRR ≥ ১:৩ হলে ফুল পজিশন (৭০%)। ব্রেকআউটের দিন বা আপার সার্কিটে কেনা নয়।'},
+  {k:'Phase E', bn:'মার্কআপ', c:'var(--pe)', bull:true,
+   d:'<b>মার্কআপ</b>: ব্রেকআউট লেভেলের ১০%+ ওপরে, দাম &gt; SMA20 &gt; SMA50। চলমান পজিশন হোল্ড, ট্রেইলিং স্টপ (EMA 9 / সুইং লো); <b>নতুন এন্ট্রি নয়</b>। টানা আপার সার্কিট বা বেশি দূর উঠে গেলে "দেরি/ঝুঁকিপূর্ণ" চিহ্ন।'},
+  {k:'Distribution', bn:'বিতরণ (BC / UTAD / SOW)', c:'var(--distribution)', bull:false,
+   d:'গত ১০ দিনে <b>Buying Climax</b> (উচ্চ ভলিউমে নতুন উচ্চে দুর্বল ক্লোজ), <b>UTAD</b> (রেজিস্ট্যান্সের ওপরে গিয়ে ফিরে আসা) বা <b>SOW</b> (উচ্চ ভলিউমে বেয়ারিশ পিনবার/সাপোর্ট ভাঙা)। রিপোর্ট: সম্পূর্ণ এক্সিট, ক্যাশ ০%।'},
+  {k:'Markdown', bn:'মার্কডাউন', c:'var(--markdown)', bull:false,
+   d:'দাম &lt; SMA20 &lt; SMA50 এবং SMA50 নিম্নমুখী — ক্রেতাহীন পতন। এড়িয়ে চলুন।'},
 ];
-const ALL = {k:'', bn:'মোট', c:'var(--acc)', d:'সব শেয়ার একসঙ্গে: ফেজের ক্রমে (সঞ্চয় → ঊর্ধ্বমুখী → পুনঃসঞ্চয় → বিতরণ → নিম্নমুখী → পুনঃবিতরণ), প্রতি ফেজে স্কোর বেশি থেকে কম। যাদের স্পষ্ট ফেজ নেই তারা সবার শেষে।'};
+const SETUP = {k:'__setup', bn:'এন্ট্রি-যোগ্য সেটআপ', c:'var(--setup)',
+  d:'<b>এন্ট্রি-যোগ্য সেটআপ</b> — রিপোর্টের শর্ত একসঙ্গে মিলেছে: (১) Phase C স্প্রিং, বা Phase D-র LPS retest, বা CHOCH-এর পর মিটিগেশন জোনে (০.৫–০.৬১৮ ফিবো / OB / FVG) প্রথম রিট্রেস; (২) ভলিউম কমেছে (VR &lt; ১); (৩) ব্রেক-ক্যান্ডেল বা আপার সার্কিটের দিন নয়; (৪) <b>RRR ≥ ১:৩</b>; (৫) Distribution/Markdown নয়। পরের দিনের শুরুতে এন্ট্রি, স্টপ নিচের সারণিতে।'};
+const WATCH = {k:'__watch', bn:'অপারেটর ওয়াচ', c:'var(--watch)',
+  d:'<b>অপারেটর ওয়াচলিস্ট</b> — স্বল্প পরিশোধিত মূলধন (Paid-up &lt; ৫০ কোটি টাকা) এমন শেয়ার, যেখানে ফ্লোটিং শেয়ার কম হওয়ায় সিন্ডিকেশন সহজ। সংকেত: <b>VR ≥ ২.৫ + ছোট বডি + সংকুচিত ATR</b> (গোপন অ্যাকিউমুলেশন) গত ৫ দিনে হলে "STEALTH" চিহ্ন। এটা শুধু প্রাথমিক ট্র্যাকিং; এন্ট্রি আসে ওপরের ফেজ/সেটআপ থেকে।'};
+const ALL = {k:'', bn:'মোট', c:'var(--acc)', d:'সব শেয়ার একসঙ্গে: ফেজের ক্রমে (A → E → Distribution → Markdown), প্রতি ফেজে স্কোর বেশি থেকে কম। যাদের স্পষ্ট ফেজ নেই তারা সবার শেষে।'};
+const TABS = [SETUP, ...PH, WATCH, ALL];
 const PMAP = Object.fromEntries(PH.map((p,i)=>[p.k,{...p,i}]));
-const SCORE_HELP = 'স্কোর (০–১০০): ভলিউমের একমুখিতা (৩০) + MA-র সাজানো (৩০) + রেঞ্জ/ট্রেন্ডের স্পষ্টতা (২০) + ভলিউমের আচরণ (১০) + ফেজে টানা থাকার দিন (১০)। বেশি = ফেজ বেশি স্পষ্ট।';
+const SCORE_HELP = 'স্কোর (০–১০০)। বুলিশ ফেজ: VR শক্তি (২৫) + সংকুচিত ATR (১৫) + ভলিউম-ব্যালান্স (১৫) + কাঠামো: ট্রেন্ড (৫) ও সাম্প্রতিক CHOCH (১০) + এন্ট্রি-যোগ্য সেটআপ (১০) + Paid-up < ৫০ কোটি (২০)। বেয়ারিশ ফেজ: বিক্রির ভলিউম-ব্যালান্স (৩০) + VR শক্তি (২৫) + SMA-র নিচে (১৫) + বেয়ারিশ কাঠামো (১৫) + Paid-up < ৫০ কোটি (১৫)। Paid-up তথ্য না থাকলে ওই অংশ ০।';
+const ACT = {
+  a_obs:'পর্যবেক্ষণ: SC হয়েছে, এখনও এন্ট্রি নয়', b_watch:'ওয়াচলিস্ট: সংগ্রহ চলছে, এন্ট্রি নয়',
+  c_scale:'স্কেলিং-ইন: মূলধনের ৩০%, স্টপ স্প্রিং লো-র ০.৫% নিচে', c_wait:'স্প্রিং হয়েছে, কিন্তু RRR < ১:৩ — অপেক্ষা',
+  d_full:'ফুল পজিশন (৭০%): LPS retest নিশ্চিত, স্টপ OB-র নিচে', d_rrr:'LPS retest, কিন্তু RRR < ১:৩ — এন্ট্রি নয়', d_wait:'SOS হয়েছে — LPS retest-এর অপেক্ষা (ব্রেকআউটে কিনবেন না)',
+  smc_in:'মিটিগেশন এন্ট্রি (CHOCH-এর পর): স্টপ লেগ-লো-র নিচে', e_hold:'পজিশন হোল্ড, ইএমএ ৯/সুইং লো-তে ট্রেইল; নতুন এন্ট্রি নয়', e_late:'দেরি/ঝুঁকিপূর্ণ: নতুন এন্ট্রি নয়, ট্রেইল বা আংশিক মুনাফা',
+  exit:'সম্পূর্ণ এক্সিট / ক্যাশ আউট (০%)', avoid:'এড়িয়ে চলুন'};
+const FLAGS = {SC:'SC', SPRING:'স্প্রিং', SOS:'SOS', BC:'BC', UTAD:'UTAD', SOW:'SOW', STEALTH:'STEALTH'};
+const BADFLAG = new Set(['BC','UTAD','SOW']);
 
-let DATA=null, BT=null, tab='', sortKey=null, sortDir=-1;
+let DATA=null, BT=null, tab=SETUP.k, sortKey=null, sortDir=-1;
 const $ = id => document.getElementById(id);
 const esc = s => String(s??'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fmt = (x,d=2) => x==null ? '–' : Number(x).toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d});
 const int = x => x==null ? '–' : Number(x).toLocaleString('en-US');
+const sgn = (x,d=2) => x==null ? '–' : (x>0?'+':'')+fmt(x,d);
 
 const COLS = [
-  {k:'c',   t:'কোড',        cls:'l code', get:s=>s.c, help:'ট্রেডিং কোড'},
-  {k:'s',   t:'সেক্টর',     cls:'l',      get:s=>s.s||'', help:''},
-  {k:'p',   t:'ফেজ',        cls:'l',      get:s=>s.p?PMAP[s.p].i:99, help:'', onlyAll:true},
+  {k:'c',   t:'কোড',        cls:'l code', get:s=>s.c},
+  {k:'s',   t:'সেক্টর',     cls:'l',      get:s=>s.s||''},
+  {k:'p',   t:'ফেজ',        cls:'l',      get:s=>s.p?PMAP[s.p].i:99, only:['__setup','__watch','']},
   {k:'sc',  t:'স্কোর',      get:s=>s.sc, help:SCORE_HELP},
   {k:'d',   t:'ফেজে দিন',   get:s=>s.d, help:'টানা কত ট্রেডিং-দিন এই ফেজে আছে (১ = আজই ঢুকেছে)'},
   {k:'cl',  t:'দাম',        get:s=>s.cl, help:'শেষ ক্লোজ (টাকা)'},
-  {k:'ch',  t:'পরিবর্তন%',  get:s=>s.ch, help:'আগের দিনের তুলনায়'},
-  {k:'v',   t:'ভলিউম',      get:s=>s.v, help:'আজকের ভলিউম (শেয়ার)'},
+  {k:'ch',  t:'পরিবর্তন%',  get:s=>s.ch, help:'আগের দিনের তুলনায়। ≥ ৯.৫% = আপার সার্কিটের কাছাকাছি'},
+  {k:'en',  t:'এন্ট্রি',     get:s=>s.en, tabs:'plan', help:'প্রস্তাবিত এন্ট্রি (আজকের ক্লোজ; বাস্তবে পরদিন)'},
+  {k:'sl',  t:'স্টপ',       get:s=>s.sl, tabs:'plan', help:'স্প্রিং/লেগ-লো-র ০.৫% নিচে, বা Phase D-তে অর্ডার ব্লকের নিচে'},
+  {k:'tg',  t:'টার্গেট',    get:s=>s.tg, tabs:'plan', help:'রেঞ্জের রেজিস্ট্যান্স / আগের ডিস্ট্রিবিউশন হাই (শেষ ১২০ দিনের সর্বোচ্চ)'},
+  {k:'rr',  t:'RRR',        get:s=>s.rr, tabs:'plan', help:'(টার্গেট − এন্ট্রি) ÷ (এন্ট্রি − স্টপ)। ন্যূনতম ৩ বাধ্যতামূলক'},
+  {k:'al',  t:'পজিশন%',     get:s=>s.al, tabs:'plan', help:'রিপোর্টের সারণি: Phase C ৩০%, Phase D ৭০%, Phase E ১০০% হোল্ড, Distribution ০%'},
+  {k:'ac',  t:'করণীয়',     cls:'l', get:s=>s.ac||'', help:'রিপোর্টের নিয়ম অনুযায়ী করণীয়', nosort:true, tabs:'noMd'},
+  {k:'vr',  t:'VR',         get:s=>s.vr, help:'ভলিউম রেশিও VR = আজকের ভলিউম ÷ আগের ২০ দিনের গড় ভলিউম। ≥ ২.৫ = অপারেটর প্রবেশের সংকেত। ব্র্যাকেটে গত ৫ দিনের সর্বোচ্চ'},
+  {k:'sq',  t:'ATR স্কুইজ', get:s=>s.sq, help:'ATR14 ÷ গত ৬০ দিনের ATR14-এর গড়। ≤ ০.৮৫ = সংকুচিত অস্থিরতা'},
+  {k:'str', t:'কাঠামো',     get:s=>s.tr*100-(s.ca??99), help:'↑ = বুলিশ কাঠামো, ↓ = বেয়ারিশ। CHOCH যত দিন আগে। জোন: F = ০.৫–০.৬১৮ ফিবো, O = অর্ডার ব্লক, G = FVG-তে দাম আছে'},
+  {k:'pu',  t:'Paid-up (কোটি)', get:s=>s.pu, help:'পরিশোধিত মূলধন (কোটি টাকা)। < ৫০ = স্বল্প-মূলধনী (ওয়াচলিস্ট)', needFund:true},
+  {k:'pe',  t:'P/E',        get:s=>s.pe, help:'P/E > ৪০ হলে BSEC-র নিয়মে মার্জিন ঋণ বন্ধ', needFund:true},
+  {k:'fl',  t:'সংকেত',      get:s=>(s.fl||[]).length, help:'গত ৫ দিনের ইভেন্ট: SC, স্প্রিং, SOS, BC, UTAD, SOW, STEALTH'},
   {k:'val', t:'গড় লেনদেন', get:s=>s.val, help:'২০ দিনের গড় দৈনিক লেনদেন (মিলিয়ন টাকা)'},
-  {k:'m20', t:'SMA20',      get:s=>s.m20},
-  {k:'m50', t:'SMA50',      get:s=>s.m50},
-  {k:'m100',t:'SMA100',     get:s=>s.m100},
-  {k:'vb',  t:'ভলিউম ব্যালান্স', get:s=>s.vb, help:'শেষ ২০ দিনে (আপ-ডে ভলিউম − ডাউন-ডে ভলিউম) ÷ মোট। +১ = পুরোটাই কেনার দিকে, −১ = বেচার দিকে'},
-  {k:'w',   t:'রেঞ্জ%',     get:s=>s.w, help:'শেষ ৪০ দিনের উচ্চ-নিম্নের প্রস্থ (মধ্যমানের %)'},
   {k:'sp',  t:'৫০ দিন',     get:null, nosort:true, help:'শেষ ৫০ দিনের ক্লোজ'},
 ];
+const PLANTABS = new Set(['__setup','Phase C','Phase D','Phase E','']);
+function colVisible(c){
+  if(c.only && !c.only.includes(tab)) return false;
+  if(c.needFund && !DATA.have_fund) return false;
+  if(c.tabs==='plan' && !PLANTABS.has(tab) && tab!=='__watch') return false;
+  if(c.tabs==='noMd' && (tab==='Markdown')) return false;
+  return true;
+}
 
 function spark(a, color){
   const v=(a||[]).filter(x=>x!=null); if(v.length<2) return '';
@@ -137,19 +180,10 @@ function spark(a, color){
   const pts=v.map((y,i)=>`${(i/(v.length-1)*W).toFixed(1)},${(H-2-(y-mn)/r*(H-4)).toFixed(1)}`).join(' ');
   return `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" aria-hidden="true"><polyline fill="none" stroke="${color}" stroke-width="1.5" points="${pts}"/></svg>`;
 }
-
-function buildTabs(){
-  const cnt = {}; DATA.stocks.forEach(s=>{ if(passBase(s)) cnt[s.p||''] = (cnt[s.p||'']||0)+1; });
-  const total = DATA.stocks.filter(passBase).length;
-  const el = $('tabs'); el.innerHTML='';
-  [ALL,...PH].forEach(p=>{
-    const b=document.createElement('button'); b.className='tab'; b.type='button'; b.setAttribute('role','tab');
-    b.setAttribute('aria-selected', String(p.k===tab)); b.style.setProperty('--c', p.c);
-    const n = p.k ? (cnt[p.k]||0) : total;
-    b.innerHTML = `<span class="dot"></span>${p.k?esc(p.k)+' <span class="note">'+esc(p.bn)+'</span>':'মোট'}<span class="n">${n}</span>`;
-    b.onclick=()=>{ tab=p.k; sortKey=null; render(); };
-    el.appendChild(b);
-  });
+function inTab(s, k){
+  if(k==='__setup') return s.ok;
+  if(k==='__watch') return s.wl;
+  return !k || s.p===k;
 }
 function passBase(s){
   if($('liq').checked && !s.lq) return false;
@@ -158,15 +192,35 @@ function passBase(s){
   if(q && !(s.c.toLowerCase().includes(q) || (s.s||'').toLowerCase().includes(q))) return false;
   return true;
 }
+function buildTabs(){
+  const el = $('tabs'); el.innerHTML='';
+  const base = DATA.stocks.filter(passBase);
+  TABS.forEach(p=>{
+    const b=document.createElement('button'); b.className='tab'; b.type='button'; b.setAttribute('role','tab');
+    b.setAttribute('aria-selected', String(p.k===tab)); b.style.setProperty('--c', p.c);
+    const n = p.k==='' ? base.length : base.filter(s=>inTab(s,p.k)).length;
+    const label = p.k==='' ? 'মোট' : p.k.startsWith('__') ? esc(p.bn) : esc(p.k)+' <span class="note">'+esc(p.bn)+'</span>';
+    b.innerHTML = `<span class="dot"></span>${label}<span class="n">${n}</span>`;
+    b.onclick=()=>{ tab=p.k; sortKey=null; render(); };
+    el.appendChild(b);
+  });
+}
+
+function structCell(s){
+  const t = s.tr>0 ? '<span class="up">↑</span>' : s.tr<0 ? '<span class="dn">↓</span>' : '–';
+  const ch = s.ca!=null ? ` <span class="chip hot" style="--c:var(--up)" title="বুলিশ CHOCH ${s.ca} দিন আগে">CHOCH ${s.ca}দি</span>` : '';
+  const z = s.z ? ` <span class="chip hot" style="--c:var(--setup)" title="মিটিগেশন জোনে দাম আছে (F ফিবো, O অর্ডার ব্লক, G FVG)">${esc(s.z)}</span>` : '';
+  return t+ch+z;
+}
 
 function render(){
   if(!DATA) return;
   buildTabs();
-  const cur = tab ? PMAP[tab] : ALL;
+  const cur = TABS.find(p=>p.k===tab);
   $('desc').style.setProperty('--c', cur.c);
-  $('desc').innerHTML = tab ? `<b>${esc(cur.k)} (${esc(cur.bn)})</b> — ${cur.d} স্কোর যত বেশি, ফেজটা তত স্পষ্ট; তাই সবচেয়ে ওপরের শেয়ার এই ফেজে সবচেয়ে জোরালো।` : `<b>মোট</b> — ${cur.d}`;
-  let rows = DATA.stocks.filter(s=>passBase(s) && (!tab || s.p===tab));
-  const cols = COLS.filter(c=>!c.onlyAll || !tab);
+  $('desc').innerHTML = tab==='' || tab.startsWith('__') ? (tab===''?`<b>মোট</b> — ${cur.d}`:cur.d) : `<b>${esc(cur.k)} (${esc(cur.bn)})</b> — ${cur.d}`;
+  let rows = DATA.stocks.filter(s=>passBase(s) && inTab(s,tab));
+  const cols = COLS.filter(colVisible);
   const key = sortKey && cols.find(c=>c.k===sortKey);
   rows.sort((a,b)=>{
     if(key){
@@ -175,6 +229,8 @@ function render(){
       const c = typeof x==='string' ? (x<y?-1:x>y?1:0) : x-y;
       return sortDir<0 ? -c : c;
     }
+    if(tab==='__setup') return (b.rr||0)-(a.rr||0) || b.sc-a.sc;
+    if(tab==='__watch') return (b.fl||[]).includes('STEALTH')-(a.fl||[]).includes('STEALTH') || b.sc-a.sc || (b.vr5||0)-(a.vr5||0);
     const pa=a.p?PMAP[a.p].i:99, pb=b.p?PMAP[b.p].i:99;
     return pa-pb || b.sc-a.sc || b.d-a.d || (a.c<b.c?-1:1);
   });
@@ -184,43 +240,89 @@ function render(){
   $('tbl').tHead.querySelectorAll('th[data-k]').forEach(h=>h.onclick=()=>{
     const k=h.dataset.k; if(sortKey===k) sortDir=-sortDir; else {sortKey=k; sortDir=-1;} render();
   });
-  if(!rows.length){ $('tbl').tBodies[0].innerHTML=`<tr><td class="empty" colspan="${cols.length}">এই ফিল্টারে কোনো শেয়ার নেই। ওপরের "শুধু লিকুইড" টিক তুলে দেখুন।</td></tr>`; return; }
+  if(!rows.length){
+    const msg = tab==='__setup' ? 'আজ রিপোর্টের সব শর্ত (বিশেষত RRR ≥ ১:৩) মেলে এমন কোনো সেটআপ নেই। এটা স্বাভাবিক — অধিকাংশ দিনই থাকে না। "Phase C" ও "Phase D" ট্যাবে অপেক্ষমাণ শেয়ার দেখুন।'
+              : 'এই ফিল্টারে কোনো শেয়ার নেই। ওপরের "শুধু লিকুইড" টিক তুলে দেখুন।';
+    $('tbl').tBodies[0].innerHTML=`<tr><td class="empty" colspan="${cols.length}">${msg}</td></tr>`; return;
+  }
   $('tbl').tBodies[0].innerHTML = rows.map(s=>{
     const p = s.p?PMAP[s.p]:null, col = p?p.c:'var(--none)';
     const cell = {
-      c:`<td class="l code">${esc(s.c)}</td>`,
+      c:`<td class="l code">${esc(s.c)}${s.cat?` <span class="chip" title="মার্কেট ক্যাটাগরি">${esc(s.cat)}</span>`:''}</td>`,
       s:`<td class="l note">${esc(s.s)}</td>`,
       p:`<td class="l">${p?`<span class="badge" style="--c:${col}">${esc(p.k)}</span>`:'<span class="note">অনির্দিষ্ট</span>'}</td>`,
       sc:`<td><span class="sc" style="--c:${col}">${p?`<b>${s.sc}</b>${s.sc>=DATA.config.strong_score?' ★':''}<span class="bar"><i style="width:${s.sc}%"></i></span>`:'–'}</span></td>`,
       d:`<td>${p?s.d+(s.d===1?`<span class="new" style="--c:${col}">নতুন</span>`:''):'–'}</td>`,
       cl:`<td>${fmt(s.cl)}</td>`,
-      ch:`<td class="${s.ch>0?'up':s.ch<0?'dn':''}">${s.ch==null?'–':(s.ch>0?'+':'')+fmt(s.ch)}</td>`,
-      v:`<td>${int(s.v)}</td>`, val:`<td>${fmt(s.val,1)}</td>`,
-      m20:`<td class="${s.cl>s.m20?'up':'dn'}">${fmt(s.m20)}</td>`, m50:`<td class="${s.cl>s.m50?'up':'dn'}">${fmt(s.m50)}</td>`, m100:`<td class="${s.cl>s.m100?'up':'dn'}">${fmt(s.m100)}</td>`,
-      vb:`<td class="${s.vb>0?'up':s.vb<0?'dn':''}">${s.vb==null?'–':(s.vb>0?'+':'')+fmt(s.vb)}</td>`,
-      w:`<td>${s.w==null?'–':fmt(s.w,1)}</td>`,
+      ch:`<td class="${s.ch>0?'up':s.ch<0?'dn':''}">${sgn(s.ch)}${s.uc>0?` <span class="chip hot" style="--c:var(--distribution)" title="গত ১০ দিনে আপার সার্কিট (≥ ৯.৫%) ${s.uc} বার">UC×${s.uc}</span>`:''}</td>`,
+      vr:`<td class="${s.vr>=DATA.config.vr_thr?'up':''}" title="গত ৫ দিনের সর্বোচ্চ VR ${fmt(s.vr5)}">${s.vr==null?'–':'<b>'+fmt(s.vr)+'</b>'} <span class="note">(${fmt(s.vr5,1)})</span></td>`,
+      sq:`<td class="${s.sq!=null&&s.sq<=DATA.config.squeeze_ratio?'up':''}">${fmt(s.sq)}</td>`,
+      str:`<td>${structCell(s)}</td>`,
+      pu:`<td class="${s.lc?'up':''}">${s.pu==null?'–':fmt(s.pu/10,1)}${s.lc?' ◆':''}</td>`,
+      pe:`<td class="${s.pe40?'dn':''}" ${s.pe40?'title="P/E > ৪০: মার্জিন ঋণ বন্ধ, ট্রেন্ড রিভার্সালের ঝুঁকি"':''}>${s.pe==null?'–':fmt(s.pe,1)}${s.pe40?' ⚠':''}</td>`,
+      fl:`<td class="l">${(s.fl||[]).map(f=>`<span class="chip ${BADFLAG.has(f)?'bad':'hot'}">${FLAGS[f]||f}</span>`).join('')||'<span class="note">–</span>'}</td>`,
+      ac:`<td class="act">${s.ac?esc(ACT[s.ac]||s.ac):''}${s.late?' ⚠':''}</td>`,
+      en:`<td>${s.pl&&s.en!=null?fmt(s.en):'–'}</td>`,
+      sl:`<td>${s.sl==null?'–':fmt(s.sl)}</td>`,
+      tg:`<td>${s.tg==null?'–':fmt(s.tg)}</td>`,
+      rr:`<td>${s.rr==null?'–':`<span class="${s.rr>=3?'tag-ok':'tag-no'}">১:${fmt(s.rr,1)}</span>`}</td>`,
+      al:`<td>${s.al?s.al+'%':'–'}</td>`,
+      val:`<td>${fmt(s.val,1)}</td>`,
       sp:`<td>${spark(s.sp,col)}</td>`,
     };
     return `<tr>${cols.map(c=>cell[c.k]).join('')}</tr>`;
   }).join('');
 }
 
-function renderBT(){
-  const el=$('bt'); if(!BT){ el.style.display='none'; return; }
-  const A=BT.phases_all, f=(x,d=2,sg=true)=> x==null||isNaN(x)?'–':(sg&&x>0?'+':'')+Number(x).toFixed(d);
-  const tcls = t => t==null?'':(Math.abs(t)>=2?(t>0?'up':'dn'):'');
-  const rows = PH.map(p=>{ const r=A[p.k], a=r.all.h20, te=r.test.h20;
-    return `<tr><td class="l"><span class="badge" style="--c:${p.c}">${p.k}</span></td><td>${int(r.events)}</td><td>${f(a.net)}%</td><td>${f(a.excess)}%</td><td class="${tcls(a.t)}">${f(a.t,1)}</td><td>${f(te.excess)}% <span class="note">(${te.n})</span></td></tr>`; }).join('');
-  el.innerHTML = `<details open><summary>ব্যাকটেস্ট (${esc(BT.first_date)} থেকে ${esc(BT.generated_for)}, ~২ বছর, ${BT.n_codes}টি কোড)</summary>
-    <p class="note">প্রতিটি শেয়ার কোনো ফেজে <b>নতুন ঢুকলে</b> পরদিন OPEN-এ কিনলে ২০ ট্রেডিং-দিন পরের ক্লোজে কী হতো (খরচ ${BT.cost_pct}% ধরে, শুধু লিকুইড শেয়ার)। "অতিরিক্ত" = সেই দিনের সব লিকুইড শেয়ারের গড়ের চেয়ে কত বেশি। t-মান মাসভিত্তিক ক্লাস্টার করা (|t| ≥ ২ হলে মোটামুটি টেকসই)। TEST = ${esc(BT.split_date)}-এর পরের অর্ধ, যা থ্রেশহোল্ড বাছাইয়ে ব্যবহার হয়নি। বেসলাইন (সব লিকুইড শেয়ার, ২০ দিন): ${f(BT.baseline.h20)}%।</p>
-    <div class="tw" style="max-height:none"><table><thead><tr><th class="l">ফেজ</th><th>ইভেন্ট</th><th>২০ দিনে নেট রিটার্ন</th><th>অতিরিক্ত</th><th>t</th><th>TEST অতিরিক্ত</th></tr></thead><tbody>${rows}</tbody></table></div>
+function renderRules(){
+  const C = DATA.config;
+  $('rules').innerHTML = `<details><summary>রিপোর্টের সূত্র ও নিয়ম — স্ক্যানার ঠিক কী হিসাব করে</summary>
+    <p class="note">কোন সংখ্যা রিপোর্টের নিজস্ব আর কোনটা রিপোর্টে সংখ্যা না থাকায় আমাদের বসানো সংজ্ঞা, তা আলাদা করে লেখা আছে।</p>
+    <p><b>১. ভলিউম রেশিও (রিপোর্টের সূত্র)</b></p>
+    <div class="formula">VR = V<sub>t</sub> ÷ [ (1/N) · Σ<sub>i=1..N</sub> V<sub>t−i</sub> ] , N = ${C.vr_n}</div>
+    <p>VR ≥ <b>${C.vr_thr}</b> (২৫০%) হলে অপারেটর প্রবেশ ধরা হয়। সাথে ক্যান্ডেলের বডি ছোট (বডি ≤ ${C.small_body} × ATR${C.atr_n}) ও অস্থিরতা সংকুচিত (ATR${C.atr_n} ÷ ৬০ দিনের ATR গড় ≤ ${C.squeeze_ratio}) হলে "গোপন অ্যাকিউমুলেশন" (STEALTH)। <span class="note">[VR ও ২.৫ রিপোর্টের; ছোট বডি/সংকুচিত-এর সংখ্যা আমাদের]</span></p>
+    <p><b>২. রিস্ক-টু-রিওয়ার্ড (রিপোর্টের সূত্র)</b></p>
+    <div class="formula">RRR = (P<sub>target</sub> − P<sub>entry</sub>) ÷ (P<sub>entry</sub> − P<sub>stop_loss</sub>) ≥ ${C.rrr_min}</div>
+    <p>P<sub>entry</sub> = আজকের ক্লোজ; P<sub>stop</sub> = স্প্রিং/সুইপ লো-র ${(C.stop_buf*100).toFixed(1)}% নিচে (Phase D-তে বুলিশ অর্ডার ব্লকের নিচে); P<sub>target</sub> = রেঞ্জের রেজিস্ট্যান্স (Phase C) বা শেষ ১২০ দিনের সর্বোচ্চ (প্রধান ডিস্ট্রিবিউশন হাই)।</p>
+    <p><b>৩. ওয়াইকফ ফেজ ও সনাক্তকরণ</b></p>
+    <div class="tw" style="max-height:none"><table><thead><tr><th>ফেজ</th><th>রিপোর্টের লক্ষণ</th><th>স্ক্যানারের নিয়ম (সংখ্যাগুলো আমাদের)</th><th>পজিশন</th></tr></thead><tbody>
+      <tr><td>Phase A</td><td>SC, এক্সট্রিম ভলিউম স্পাইক</td><td>VR ≥ ${C.vr_thr}, দাম &lt; SMA50, ১২০ দিনের উচ্চ থেকে ≥ ${(C.sc_dd*100)}% নিচে, ৬০ দিনের নিম্নের ২%-এর মধ্যে; পরের ${C.sc_win} দিন, দাম SC লো-র ওপরে</td><td>০ (পর্যবেক্ষণ)</td></tr>
+      <tr><td>Phase B</td><td>কম অস্থিরতা, সংকুচিত স্প্রেড, নিম্ন ভলিউম</td><td>পতনের পর ${C.win} দিনের রেঞ্জ প্রস্থ ≤ ${(C.max_width*100)}%, ATR স্কুইজ ≤ ${C.squeeze_ratio}, ১০ দিনের গড় ভলিউম ≤ ৬০ দিনের গড়</td><td>০ (ওয়াচলিস্ট)</td></tr>
+      <tr><td>Phase C</td><td>স্প্রিং: লো-ভলিউম ব্রেকডাউন ও দ্রুত রিকভারি</td><td>রেঞ্জের সাপোর্টের নিচে (≤ ${(C.spring_depth*100)}%) প্রথমবার নামা, সেই দিন VR ≤ ${C.spring_vr_max}; ${C.spring_win} দিনের মধ্যে দাম সাপোর্টের ওপরে ফেরা</td><td>৩০%</td></tr>
+      <tr><td>Phase D</td><td>ভলিউম বৃদ্ধি সহ SOS ও LPS</td><td>পতনের পরের রেঞ্জের রেজিস্ট্যান্স প্রথমবার ক্লোজে ভাঙা, VR ≥ ${C.sos_vr}; পরের ${C.sos_win} দিন লেভেলের ০–${(C.e_ext*100)}% ওপরে। LPS = লেভেলের ৩%-এর মধ্যে নেমে কম ভলিউমে (VR &lt; ১)</td><td>৭০%</td></tr>
+      <tr><td>Phase E</td><td>উচ্চ ভলিউম, ধারাবাহিক আপার সার্কিট</td><td>SOS-এর পর ${C.e_win} দিনের মধ্যে, দাম লেভেলের ${(C.e_ext*100)}%+ ওপরে ও &gt; SMA20 &gt; SMA50। ১০ দিনে ≥ ৩ আপার সার্কিট (দৈনিক ≥ ${C.uc_pct}%) বা লেভেলের ${(C.e_late_ext*100)}%+ ওপরে = দেরি</td><td>১০০% হোল্ড, নতুন নয়</td></tr>
+      <tr><td>Distribution</td><td>BC, UTAD, SOW</td><td>BC: VR ≥ ${C.vr_thr}, ৬০ দিনের উচ্চের কাছে, ক্লোজ দিনের নিচের অর্ধে। UTAD: রেঞ্জ-হাই ছাড়িয়ে গিয়ে ক্লোজ ভেতরে, VR ≥ ${C.dist_vr}। SOW: VR ≥ ২ সহ বেয়ারিশ পিনবার, বা সাপোর্ট ক্লোজে ভাঙা (VR ≥ ${C.dist_vr})। সবই আগে ঊর্ধ্বমুখী থাকলে, গত ${C.dist_win} দিনে</td><td>০% (ক্যাশ)</td></tr>
+      <tr><td>Markdown</td><td>ক্রেতাহীন ধস</td><td>দাম &lt; SMA20 &lt; SMA50, SMA50 নিম্নমুখী</td><td>০%</td></tr>
+    </tbody></table></div>
+    <p><b>৪. স্মার্ট মানি কনসেপ্ট (রিপোর্টের সংজ্ঞা)</b></p>
     <ul class="k">
-      <li><b>সবচেয়ে টেকসই ধারা:</b> <b>Markdown</b> ফেজে ঢোকা শেয়ার বাজারের গড়ের চেয়ে খারাপ করেছে (${f(A.Markdown.all.h20.excess)}%, t = ${f(A.Markdown.all.h20.t,1)}, TEST-এও ${f(A.Markdown.test.h20.excess)}%)। তাই এটাকে "এড়ানোর" সংকেত হিসেবে ধরা যায় (তবে ৬টি ফেজ একসঙ্গে পরীক্ষা করায় এটাও নিশ্চিত প্রমাণ নয়)।</li>
-      <li><b>Accumulation</b> বাজারের চেয়ে ভালো করেছে (${f(A.Accumulation.all.h20.excess)}%, TEST-এ ${f(A.Accumulation.test.h20.excess)}%, t = ${f(A.Accumulation.all.h20.t,1)}), কিন্তু প্রমাণ সীমারেখার কাছাকাছি, নিশ্চিত নয়।</li>
-      <li><b>বাকি ফেজগুলো (Markup, Re-accumulation, Distribution, Re-distribution)</b> থেকে ভরসাযোগ্য কিছু বলা যায় না: t-মান ছোট, ফল এক অর্ধে ভালো তো অন্য অর্ধে উল্টো।</li>
-      <li><b>স্কোরের ক্রম:</b> বুলিশ ফেজে কাজ করেছে (Accumulation: উচ্চ-স্কোর গ্রুপ ${f(A.Accumulation.score_split.hi_excess)}% বনাম নিম্ন ${f(A.Accumulation.score_split.lo_excess)}%; Re-accumulation: ${f(A['Re-accumulation'].score_split.hi_excess)}% বনাম ${f(A['Re-accumulation'].score_split.lo_excess)}%)। বেয়ারিশ ফেজে ভরসাযোগ্য নয়: Markdown-এ উচ্চ-স্কোর গ্রুপ ${f(A.Markdown.score_split.hi_excess)}% বনাম নিম্ন ${f(A.Markdown.score_split.lo_excess)}%, অর্থাৎ বেয়ারিশ ট্যাবে স্কোর শুধু ফেজ কতটা স্পষ্ট তা বলে, কতটা পড়বে তা নয়।</li>
+      <li><b>সুইং হাই/লো:</b> দুই পাশে ${C.swing_k} দিনের চেয়ে উঁচু/নিচু; ${C.swing_k} দিন পরে নিশ্চিত হয় (ভবিষ্যৎ দেখা নেই)।</li>
+      <li><b>CHOCH:</b> বেয়ারিশ কাঠামোতে সর্বশেষ সুইং হাই ক্লোজে প্রথমবার ভাঙা। <b>BOS:</b> চলমান ট্রেন্ডের সুইং ভাঙা।</li>
+      <li><b>বুলিশ অর্ডার ব্লক (OB):</b> CHOCH-এর ঠিক আগের উর্ধ্ব-রানের আগের শেষ ডাউন-ক্যান্ডেল। <b>FVG:</b> তিন-ক্যান্ডেলের গ্যাপ, low[i] &gt; high[i−2]।</li>
+      <li><b>মিটিগেশন জোন:</b> লেগের (স্প্রিং লো → সর্বোচ্চ) ${C.fib_lo}–${C.fib_hi} ফিবো / OB / FVG। দাম এর যেকোনোটিতে ঢুকলে ও ভলিউম কমলে এবং CHOCH-এর ${C.smc_win} দিনের মধ্যে ও ব্রেক-ক্যান্ডেলের পরের দিন থেকে এন্ট্রি-যোগ্য। ক্লোজ লেগ-লো-র নিচে গেলে বাতিল।</li>
     </ul>
-    <p class="note warn">থ্রেশহোল্ড (রেঞ্জ প্রস্থ ≤ ${(BT.config.max_width*100).toFixed(0)}%, আগের ট্রেন্ড ≥ ${(BT.config.prior_pct*100).toFixed(0)}%) ${BT.grid_size}টি সংমিশ্রণ থেকে শুধু আগের অর্ধ (TRAIN) দেখে বাছা; বাছাই-না-করা সংমিশ্রণের গড়ের চেয়ে বাছাইটা TEST-এ খুব বেশি ভালো হয়নি, তাই আলাদা করে "টিউন করা" সুবিধা ধরা ঠিক হবে না। একটা বাজার-চক্রের ২ বছর খুবই অল্প; এটা বাজার-কাঠামো বোঝার ছক, নিশ্চিত কেনা-বেচার সংকেত নয়।</p>
+    <p><b>৫. নিয়ন্ত্রক শর্ত (রিপোর্ট)</b>: সার্কিট ±১০% (আপার সার্কিট ধরতে দৈনিক ≥ ${C.uc_pct}%); Paid-up &lt; ${C.lowcap_mn/10} কোটি টাকা = ওয়াচলিস্ট; P/E &gt; ${C.pe_limit} হলে মার্জিন ঋণ বন্ধ (⚠ চিহ্ন)।</p>
+    <p class="note">সীমাবদ্ধতা: DSE-তে প্রি-মার্কেট বা সার্কিট-হল্টের ভেতরের ডেটা নেই; সব হিসাব দৈনিক OHLCV থেকে। অপারেটর ধরা পড়ার পর রিটেইল-এর কাছে পৌঁছানোর আগেই সংকেত পুরনো হয়ে যেতে পারে।</p>
+  </details>`;
+}
+
+function renderBT(){
+  const el=$('bt'); if(!BT || !BT.phases){ el.style.display='none'; return; }
+  const f=(x,d=2,sg=true)=> x==null||isNaN(x)?'–':(sg&&x>0?'+':'')+Number(x).toFixed(d);
+  const tcls = t => t==null?'':(Math.abs(t)>=2?(t>0?'up':'dn'):'');
+  const rows = PH.map(p=>{ const r=BT.phases[p.k]; if(!r) return ''; const a=r.all.h20||{}, te=r.test.h20||{};
+    return `<tr><td class="l"><span class="badge" style="--c:${p.c}">${p.k}</span></td><td>${int(r.events)}</td><td>${f(a.net)}%</td><td>${f(a.excess)}%</td><td class="${tcls(a.t)}">${f(a.t,1)}</td><td>${f(te.excess)}% <span class="note">(${te.n||0})</span></td></tr>`; }).join('');
+  const S = BT.setups||{}, names={ALL:'সব সেটআপ',D:'Phase D (LPS)',SMC:'CHOCH মিটিগেশন',C:'Phase C (স্প্রিং)'};
+  const srows = ['ALL','D','SMC','C'].filter(k=>S[k]).map(k=>{ const r=S[k];
+    return `<tr><td class="l">${names[k]}</td><td>${int(r.n)}</td><td>${f(r.win,0,false)}%</td><td>${f(r.avg_r)}R</td><td>${f(r.med_r)}R</td><td>${f(r.tp,0,false)}% / ${f(r.sl,0,false)}% / ${f(r.time,0,false)}%</td><td>${f(r.train.avg_r)}R <span class="note">(${r.train.n})</span></td><td>${f(r.test.avg_r)}R <span class="note">(${r.test.n})</span></td></tr>`; }).join('');
+  const st = BT.stealth, stx = st ? `<li><b>STEALTH সংকেত (VR ≥ ২.৫ + ছোট বডি + সংকুচিত ATR):</b> ${int(st.all.h20.n)}টি ইভেন্ট, ২০ দিনে বাজারের গড়ের চেয়ে ${f(st.all.h20.excess)}% (t = ${f(st.all.h20.t,1)}); TEST-এ ${f(st.test.h20.excess)}% (${st.test.h20.n}টি)।</li>` : '';
+  el.innerHTML = `<details open><summary>ব্যাকটেস্ট (${esc(BT.first_date)} থেকে ${esc(BT.generated_for)}, ~২ বছর, ${BT.n_codes}টি কোড)</summary>
+    <p class="note">রিপোর্টের নিয়ম <b>যেমন আছে তেমন</b> (কোনো থ্রেশহোল্ড টিউন করা হয়নি) পুরো ইতিহাসে চালানো। শুধু লিকুইড শেয়ার, খরচ ${BT.cost_pct}% (আসা-যাওয়া মিলিয়ে)। ফেজে "নতুন ঢুকলে" পরদিন OPEN-এ কিনে ২০ দিন পরের ক্লোজে বের হলে কী হতো; "অতিরিক্ত" = সেই দিনের সব লিকুইড শেয়ারের গড়ের চেয়ে কত বেশি; t-মান মাসভিত্তিক ক্লাস্টার করা (|t| ≥ ২ হলে মোটামুটি টেকসই)। TEST = ${esc(BT.split_date)}-এর পরের অর্ধ। বেসলাইন (সব লিকুইড শেয়ার, ২০ দিন): ${f(BT.baseline.h20)}%।</p>
+    <div class="tw" style="max-height:none"><table><thead><tr><th class="l">ফেজ</th><th>ইভেন্ট</th><th>২০ দিনে নেট রিটার্ন</th><th>অতিরিক্ত</th><th>t</th><th>TEST অতিরিক্ত</th></tr></thead><tbody>${rows}</tbody></table></div>
+    <p class="note" style="margin-top:12px"><b>সেটআপের ট্রেড-সিমুলেশন:</b> সেটআপ প্রথম দেখা দিলে পরদিন OPEN-এ এন্ট্রি, রিপোর্টের স্টপ ও টার্গেটসহ (একই দিনে দুটোই ছুঁলে স্টপ ধরা হয়), সর্বোচ্চ ৪০ দিন। R = ঝুঁকির (এন্ট্রি − স্টপ) গুণিতক, খরচ বাদে। শেষ ঘরের তিনটি = টার্গেটে / স্টপে / সময় শেষে বের হওয়ার হার।</p>
+    <div class="tw" style="max-height:none"><table><thead><tr><th class="l">সেটআপ</th><th>ট্রেড</th><th>জেতা%</th><th>গড় R</th><th>মধ্যমা R</th><th>টার্গেট / স্টপ / সময়</th><th>TRAIN গড় R</th><th>TEST গড় R</th></tr></thead><tbody>${srows}</tbody></table></div>
+    <ul class="k">${stx}${(BT.notes||[]).map(n=>`<li>${n}</li>`).join('')}</ul>
+    <p class="note warn">একটা বাজার-চক্রের ২ বছর খুবই অল্প, আর এই সময়টা মূলত পতনের। ট্রেডের সংখ্যা কম হলে গড় R-এ আস্থা রাখা যায় না। এটা বাজার-কাঠামো বোঝার ছক, নিশ্চিত কেনা-বেচার সংকেত নয়।</p>
   </details>`;
 }
 
@@ -234,9 +336,11 @@ async function init(){
   $('sector').innerHTML += secs.map(s=>`<option>${esc(s)}</option>`).join('');
   let upd='';
   try{ upd=new Date(DATA.updated_utc).toLocaleString('bn-BD',{timeZone:'Asia/Dhaka',dateStyle:'medium',timeStyle:'short'}); }catch(e){ upd=DATA.updated_utc; }
-  $('meta').innerHTML = `<span>ডেটার শেষ তারিখ: <b>${esc(DATA.last_date)}</b></span><span>আপডেট: <b>${esc(upd)}</b></span><span>শেয়ার: <b>${DATA.n_all}</b> (লিকুইড <b>${DATA.n_liquid}</b>)</span>`;
+  $('meta').innerHTML = `<span>ডেটার শেষ তারিখ: <b>${esc(DATA.last_date)}</b></span><span>আপডেট: <b>${esc(upd)}</b></span><span>শেয়ার: <b>${DATA.n_all}</b> (লিকুইড <b>${DATA.n_liquid}</b>)</span><span>এন্ট্রি-যোগ্য সেটআপ (লিকুইড): <b>${DATA.n_setup_liquid}</b></span>`;
+  if(!DATA.have_fund){ const w=$('fundwarn'); w.style.display='block';
+    w.innerHTML = 'Paid-up মূলধন ও P/E-র তথ্য এখনও আসেনি (সাপ্তাহিক আপডেটে <code>docs/data/fundamentals.csv</code> তৈরি হয়; চাইলে <code>fundamentals_manual.csv</code> দিয়ে হাতে দিতে পারেন)। ততদিন "অপারেটর ওয়াচ" ট্যাবে শুধু STEALTH সংকেতওয়ালা শেয়ার দেখাচ্ছে, আর স্কোরে Paid-up-এর ২০ পয়েন্ট ধরা হচ্ছে না।'; }
   ['q','sector','liq'].forEach(id=>$(id).addEventListener(id==='q'?'input':'change',render));
-  renderBT(); render();
+  renderRules(); renderBT(); render();
 }
 init();
 </script>
