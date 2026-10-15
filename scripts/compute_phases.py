@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 import numpy as np
 import pandas as pd
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from phase_engine import Cfg, PHASES, build_panel, classify, load_prices, cfg_dict  # noqa: E402
+from phase_engine import Cfg, PHASES, build_panel, classify, load_all_prices, cfg_dict  # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA = os.path.join(ROOT, 'docs', 'data')
@@ -44,7 +44,7 @@ def load_fund():
 
 
 def main():
-    prices = load_prices(os.path.join(DATA, 'prices.csv'))
+    prices = load_all_prices(ROOT)
     cfg = Cfg()
     fund = load_fund()
     have_fund = len(fund) > 0 and fund['paidup_mn'].notna().any()
