@@ -19,6 +19,8 @@
 প্রতিটি সিদ্ধান্ত শুধু সেই দিন পর্যন্ত ডেটা দেখে নেওয়া হয় (সুইং কেবল ৩ দিন পরে নিশ্চিত হয়), তাই আজকের স্ক্যান আর ব্যাকটেস্ট একই কোড।
 """
 from dataclasses import dataclass, asdict
+import glob
+import os
 import numpy as np
 import pandas as pd
 
@@ -390,6 +392,22 @@ def load_prices(path):
         d[k] = pd.to_numeric(d[k], errors="coerce")
     d = d[d["close"] > 0]
     return d
+
+
+def load_all_prices(root):
+    """ইতিহাস/ ফোল্ডারের CSV এবং বর্তমান docs/data/prices.csv একত্রে পড়ে। বর্তমান ডেটা ডুপ্লিকেট হলে অগ্রাধিকার পায়।"""
+    paths = sorted(glob.glob(os.path.join(root, "history", "*.csv")))
+    current = os.path.join(root, "docs", "data", "prices.csv")
+    if os.path.exists(current):
+        paths.append(current)
+    if not paths:
+        raise FileNotFoundError("কোনো price CSV পাওয়া যায়নি")
+    frames = [load_prices(path) for path in paths]
+    d = pd.concat(frames, ignore_index=True)
+    d["date"] = d["date"].astype(str).str.strip()
+    d["code"] = d["code"].astype(str).str.strip().str.upper()
+    d = d.drop_duplicates(subset=["date", "code"], keep="last")
+    return d.sort_values(["code", "date"]).reset_index(drop=True)
 
 
 def cfg_dict(cfg):
