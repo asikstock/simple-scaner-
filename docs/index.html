@@ -316,13 +316,13 @@ function renderBT(){
   const srows = ['ALL','D','SMC','C'].filter(k=>S[k]).map(k=>{ const r=S[k];
     return `<tr><td class="l">${names[k]}</td><td>${int(r.n)}</td><td>${f(r.win,0,false)}%</td><td>${f(r.avg_r)}R</td><td>${f(r.med_r)}R</td><td>${f(r.tp,0,false)}% / ${f(r.sl,0,false)}% / ${f(r.time,0,false)}%</td><td>${f(r.train.avg_r)}R <span class="note">(${r.train.n})</span></td><td>${f(r.test.avg_r)}R <span class="note">(${r.test.n})</span></td></tr>`; }).join('');
   const st = BT.stealth, stx = st ? `<li><b>STEALTH সংকেত (VR ≥ ২.৫ + ছোট বডি + সংকুচিত ATR):</b> ${int(st.all.h20.n)}টি ইভেন্ট, ২০ দিনে বাজারের গড়ের চেয়ে ${f(st.all.h20.excess)}% (t = ${f(st.all.h20.t,1)}); TEST-এ ${f(st.test.h20.excess)}% (${st.test.h20.n}টি)।</li>` : '';
-  el.innerHTML = `<details open><summary>ব্যাকটেস্ট (${esc(BT.first_date)} থেকে ${esc(BT.generated_for)}, ~২ বছর, ${BT.n_codes}টি কোড)</summary>
+  el.innerHTML = `<details open><summary>ব্যাকটেস্ট (${esc(BT.first_date)} থেকে ${esc(BT.generated_for)}, ~${Math.max(1,Math.round((new Date(BT.generated_for)-new Date(BT.first_date))/31557600000))} বছর, ${BT.n_codes}টি কোড)</summary>
     <p class="note">রিপোর্টের নিয়ম <b>যেমন আছে তেমন</b> (কোনো থ্রেশহোল্ড টিউন করা হয়নি) পুরো ইতিহাসে চালানো। শুধু লিকুইড শেয়ার, খরচ ${BT.cost_pct}% (আসা-যাওয়া মিলিয়ে)। ফেজে "নতুন ঢুকলে" পরদিন OPEN-এ কিনে ২০ দিন পরের ক্লোজে বের হলে কী হতো; "অতিরিক্ত" = সেই দিনের সব লিকুইড শেয়ারের গড়ের চেয়ে কত বেশি; t-মান মাসভিত্তিক ক্লাস্টার করা (|t| ≥ ২ হলে মোটামুটি টেকসই)। TEST = ${esc(BT.split_date)}-এর পরের অর্ধ। বেসলাইন (সব লিকুইড শেয়ার, ২০ দিন): ${f(BT.baseline.h20)}%।</p>
     <div class="tw" style="max-height:none"><table><thead><tr><th class="l">ফেজ</th><th>ইভেন্ট</th><th>২০ দিনে নেট রিটার্ন</th><th>অতিরিক্ত</th><th>t</th><th>TEST অতিরিক্ত</th></tr></thead><tbody>${rows}</tbody></table></div>
     <p class="note" style="margin-top:12px"><b>সেটআপের ট্রেড-সিমুলেশন:</b> সেটআপ প্রথম দেখা দিলে পরদিন OPEN-এ এন্ট্রি, রিপোর্টের স্টপ ও টার্গেটসহ (একই দিনে দুটোই ছুঁলে স্টপ ধরা হয়), সর্বোচ্চ ৪০ দিন। R = ঝুঁকির (এন্ট্রি − স্টপ) গুণিতক, খরচ বাদে। শেষ ঘরের তিনটি = টার্গেটে / স্টপে / সময় শেষে বের হওয়ার হার।</p>
     <div class="tw" style="max-height:none"><table><thead><tr><th class="l">সেটআপ</th><th>ট্রেড</th><th>জেতা%</th><th>গড় R</th><th>মধ্যমা R</th><th>টার্গেট / স্টপ / সময়</th><th>TRAIN গড় R</th><th>TEST গড় R</th></tr></thead><tbody>${srows}</tbody></table></div>
     <ul class="k">${stx}${(BT.notes||[]).map(n=>`<li>${n}</li>`).join('')}</ul>
-    <p class="note warn">একটা বাজার-চক্রের ২ বছর খুবই অল্প, আর এই সময়টা মূলত পতনের। ট্রেডের সংখ্যা কম হলে গড় R-এ আস্থা রাখা যায় না। এটা বাজার-কাঠামো বোঝার ছক, নিশ্চিত কেনা-বেচার সংকেত নয়।</p>
+    <p class="note warn">গড় R কয়েকটি বড় ট্রেডের (খুব কাছের স্টপের কারণে বিশাল R) দ্বারা ফুলে যেতে পারে; মধ্যমা R ও টার্গেট/স্টপের হার তুলনামূলক বাস্তব ছবি দেয়। সেটআপের সংখ্যা কম হলে (যেমন Phase D) আস্থা রাখা যায় না। এটা বাজার-কাঠামো বোঝার ছক, নিশ্চিত কেনা-বেচার সংকেত নয়।</p>
   </details>`;
 }
 
