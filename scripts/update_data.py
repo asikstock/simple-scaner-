@@ -381,7 +381,7 @@ def main():
     p.add_argument('--days', type=int, default=760, help='ইতিহাসের ক্যালেন্ডার-দিন (ডিফল্ট ৭৬০ ≈ ২ বছর)')
     p.add_argument('--backfill', action='store_true', help='আগের ডেটা না ছুঁয়ে শুধু পুরনো অংশ ভরে (--bootstrap-এর সাথে)')
     p.add_argument('--codes', default='', help='কমা দিয়ে নির্দিষ্ট কোম্পানির কোড')
-    p.add_argument('--keep', type=int, default=560, help='সর্বাধিক কত ট্রেডিং-দিন রাখবে (ডিফল্ট ৫৬০ ≈ ২ বছর ২ মাস)')
+    p.add_argument('--keep', type=int, default=1500, help='সর্বাধিক কত ট্রেডিং-দিন রাখবে (ডিফল্ট ১৫০০ ≈ ৬ বছর)')
     p.add_argument('--sleep', type=float, default=1.5, help='প্রতি কোম্পানির মাঝে বিরতি (সেকেন্ড)')
     p.add_argument('--cutoff', default='14:20', help='এর আগের (ঢাকা সময়) আংশিক ডেটা নেবে না')
     p.add_argument('--force', action='store_true')

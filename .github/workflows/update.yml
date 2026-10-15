@@ -10,6 +10,9 @@ on:
     - cron: '10 13 * * 0-4'   # ৭:১০ PM
     - cron: '40 16 * * 0-4'   # ১০:৪০ PM
     - cron: '25 1 * * 1-5'    # পরদিন সকাল ৭:২৫ (আগের রাতে যা বাদ পড়েছে)
+  push:
+    paths:
+      - '.github/backfill-request.txt'
   workflow_dispatch:
     inputs:
       bootstrap:
@@ -29,7 +32,7 @@ concurrency:
 jobs:
   update:
     runs-on: ubuntu-latest
-    timeout-minutes: 180
+    timeout-minutes: 340
     steps:
       - uses: actions/checkout@v4
         with:
@@ -47,11 +50,11 @@ jobs:
         continue-on-error: true
 
       - name: পুরনো ইতিহাস ভরা (২ বছর)
-        if: ${{ github.event.inputs.bootstrap == 'true' }}
-        run: python scripts/update_data.py --bootstrap --backfill --days 760
+        if: ${{ (github.event.inputs.bootstrap == 'true' || github.event_name == 'push') }}
+        run: python scripts/update_data.py --bootstrap --backfill --days 1800
 
       - name: আজকের ডেটা যোগ
-        if: ${{ github.event.inputs.bootstrap != 'true' }}
+        if: ${{ !(github.event.inputs.bootstrap == 'true' || github.event_name == 'push') }}
         run: python scripts/update_data.py
 
       - name: মৌলিক তথ্য (Paid-up, P/E — সপ্তাহে একবার)
@@ -62,7 +65,7 @@ jobs:
         run: python -I scripts/compute_phases.py
 
       - name: ব্যাকটেস্ট (শুধু চাইলে)
-        if: ${{ github.event.inputs.backtest == 'true' }}
+        if: ${{ github.event.inputs.backtest == 'true' || github.event_name == 'push' }}
         run: python -I tools/backtest.py
         continue-on-error: true
 
