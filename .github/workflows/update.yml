@@ -21,6 +21,9 @@ on:
       backtest:
         description: 'ব্যাকটেস্ট আবার চালাবেন? (true বা false)'
         default: 'false'
+      probe:
+        description: 'শুধু যাচাই: DSE আর্কাইভ কত পুরনো ডেটা দেয়? (true বা false)'
+        default: 'false'
 
 permissions:
   contents: write
@@ -49,12 +52,16 @@ jobs:
         run: python tests/test_update_data.py
         continue-on-error: true
 
-      - name: পুরনো ইতিহাস ভরা (২ বছর)
-        if: ${{ (github.event.inputs.bootstrap == 'true' || github.event_name == 'push') }}
+      - name: আর্কাইভ যাচাই (probe)
+        if: ${{ github.event.inputs.probe == 'true' }}
+        run: python scripts/update_data.py --probe --sleep 1
+
+      - name: পুরনো ইতিহাস ভরা (৫ বছর)
+        if: ${{ (github.event.inputs.bootstrap == 'true' || github.event_name == 'push') && github.event.inputs.probe != 'true' }}
         run: python scripts/update_data.py --bootstrap --backfill --days 1800
 
       - name: আজকের ডেটা যোগ
-        if: ${{ !(github.event.inputs.bootstrap == 'true' || github.event_name == 'push') }}
+        if: ${{ !(github.event.inputs.bootstrap == 'true' || github.event_name == 'push') && github.event.inputs.probe != 'true' }}
         run: python scripts/update_data.py
 
       - name: মৌলিক তথ্য (Paid-up, P/E — সপ্তাহে একবার)

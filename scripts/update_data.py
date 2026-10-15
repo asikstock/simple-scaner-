@@ -348,7 +348,7 @@ def run_bootstrap(a):
                 first[c] = d
     mode = 'শুধু পুরনো অংশ ভরা (backfill)' if first else 'পুরো ইতিহাস'
     log(f'{len(codes)}টি কোম্পানির ইতিহাস ({start} থেকে {end}) নামানো হচ্ছে [{mode}]। এতে বেশ কিছুক্ষণ লাগবে।')
-    failed, skipped = [], 0
+    failed, skipped, empty, oldest = [], 0, 0, None
     for i, code in enumerate(codes, 1):
         c_start, c_end = start, end
         if code in first:
@@ -359,6 +359,10 @@ def run_bootstrap(a):
         try:
             recs = fetch_archive(base, code, c_start.isoformat(), c_end.isoformat())
             merge(data, recs)
+            if not recs:
+                empty += 1
+            elif oldest is None or min(r['DATE'] for r in recs) < oldest:
+                oldest = min(r['DATE'] for r in recs)
             log(f'[{i}/{len(codes)}] {code}: {len(recs)} দিন ({c_start} থেকে {c_end})')
         except Exception as e:
             failed.append(code)
@@ -368,6 +372,9 @@ def run_bootstrap(a):
         time.sleep(a.sleep)
     if skipped:
         log(f'{skipped}টি কোম্পানির ডেটা আগেই যথেষ্ট পুরনো পর্যন্ত আছে, বাদ দেওয়া হলো।')
+    log(f'সারাংশ: {empty}টি কোম্পানির জন্য আর্কাইভ থেকে কোনো সারি আসেনি; সবচেয়ে পুরনো তারিখ যা পাওয়া গেছে: {oldest or "কিছুই না"}')
+    if empty and oldest is None:
+        log('সতর্কতা: কোনো কোম্পানির জন্যই নতুন ডেটা আসেনি। DSE সার্ভার এই সময়সীমার ডেটা দিচ্ছে না হতে পারে; `--probe` চালিয়ে দেখুন।')
     if failed:
         log(f'ব্যর্থ হয়েছে ({len(failed)}টি): ' + ', '.join(failed))
     save(data, a.keep, base)
@@ -375,8 +382,52 @@ def run_bootstrap(a):
     return 0 if len(failed) < len(codes) else 1
 
 
+PROBE_WINDOWS = [('2024-10-14', '2024-10-31'), ('2024-09-01', '2024-10-13'), ('2024-01-01', '2024-03-31'),
+                 ('2023-01-01', '2023-03-31'), ('2022-01-01', '2022-03-31'), ('2021-01-01', '2021-03-31'),
+                 ('2020-01-01', '2020-03-31')]
+HINT_RE = re.compile(r'.{0,80}(no data|not found|invalid|limit|exceed|maximum|not available|please).{0,120}', re.I)
+
+
+def probe_one(base, code, start, end):
+    """একটি আর্কাইভ অনুরোধ চালিয়ে কী ফিরল তা সংক্ষেপে দেয় (ডেটা সংরক্ষণ করে না)।"""
+    qs = urllib.parse.urlencode({'startDate': start, 'endDate': end, 'inst': code, 'archive': 'data'})
+    out = {'base': base, 'code': code, 'start': start, 'end': end}
+    try:
+        html = http_get(f'{base}/day_end_archive.php?{qs}', retries=2)
+    except Exception as e:
+        out['error'] = str(e)[:300]
+        return out
+    rows, text = extract(html)
+    dates = sorted(d for d in (parse_date(r.get('DATE')) for r in rows) if d)
+    out.update(html_len=len(html), table_rows=len(rows), first=dates[0] if dates else None, last=dates[-1] if dates else None)
+    if not rows:
+        flat = ' '.join(text.split())
+        m = HINT_RE.search(flat)
+        out['hint'] = m.group(0).strip() if m else None
+        out['text_head'] = flat[:200]
+    return out
+
+
+def run_probe(a):
+    """DSE আর্কাইভ কত পুরনো তারিখ পর্যন্ত ডেটা দেয় তা যাচাই। ফল docs/data/backfill_probe.json-এ লেখে।"""
+    codes = [c.strip().upper() for c in (a.codes or 'GP,BRACBANK,SQURPHARMA').split(',') if c.strip()]
+    results = []
+    for base in BASES:
+        for code in codes:
+            for s, e in PROBE_WINDOWS:
+                r = probe_one(base, code, s, e)
+                results.append(r)
+                log(f"{base} {code} {s}..{e}: " + (f"ত্রুটি {r['error']}" if 'error' in r else f"{r['table_rows']} সারি ({r['first']} থেকে {r['last']})"))
+                time.sleep(a.sleep)
+    os.makedirs(DATA_DIR, exist_ok=True)
+    with open(os.path.join(DATA_DIR, 'backfill_probe.json'), 'w', encoding='utf-8') as f:
+        json.dump({'run_utc': datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'), 'results': results}, f, ensure_ascii=False, indent=2)
+    return 0
+
+
 def main():
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    p.add_argument('--probe', action='store_true', help='আর্কাইভ কত পুরনো ডেটা দেয় তা যাচাই (কিছু সংরক্ষণ করে না, শুধু backfill_probe.json লেখে)')
     p.add_argument('--bootstrap', action='store_true', help='প্রথমবার ইতিহাস নামান')
     p.add_argument('--days', type=int, default=760, help='ইতিহাসের ক্যালেন্ডার-দিন (ডিফল্ট ৭৬০ ≈ ২ বছর)')
     p.add_argument('--backfill', action='store_true', help='আগের ডেটা না ছুঁয়ে শুধু পুরনো অংশ ভরে (--bootstrap-এর সাথে)')
@@ -387,7 +438,7 @@ def main():
     p.add_argument('--force', action='store_true')
     a = p.parse_args()
     try:
-        sys.exit(run_bootstrap(a) if a.bootstrap else run_daily(a))
+        sys.exit(run_probe(a) if a.probe else run_bootstrap(a) if a.bootstrap else run_daily(a))
     except Exception as e:
         log('ত্রুটি:', e)
         sys.exit(1)

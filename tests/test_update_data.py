@@ -101,4 +101,26 @@ arch_calls = [c for c in calls if 'day_end_archive' in c]
 co1 = [c for c in arch_calls if 'inst=CO001' in c]
 assert co1 and 'endDate=2026-08-31' in co1[-1], co1  # CO001-এর প্রথম সংরক্ষিত দিন ০১-০৯-২০২৬, তাই ৩১-০৮ পর্যন্ত
 assert any('inst=CO002' in c for c in arch_calls)  # CO002 এর ডেটা নেই, পুরোটা আনে
+
+# 6) probe মোড: ডেটা থাকলে তারিখ, খালি পেজ হলে ইঙ্গিত, ত্রুটি হলে error লেখে; prices.csv ছোঁয় না
+import json
+tmp3 = tempfile.mkdtemp()
+U.DATA_DIR = tmp3; U.CSV_PATH = os.path.join(tmp3, 'prices.csv'); U.META_PATH = os.path.join(tmp3, 'meta.json')
+def fake_get(url, **k):
+    if 'startDate=2024-10-14' in url:
+        return archive_html()
+    if 'startDate=2024-09-01' in url:
+        return '<html><body><p>No data found for the selected date range</p></body></html>'
+    raise RuntimeError('boom')
+U.http_get = fake_get
+U.BASES = ['https://example.test']
+class P:
+    codes = 'CO001'; sleep = 0
+assert U.run_probe(P) == 0
+res = json.load(open(os.path.join(tmp3, 'backfill_probe.json'), encoding='utf-8'))['results']
+by = {(r['start']): r for r in res}
+assert by['2024-10-14']['table_rows'] == 1 and by['2024-10-14']['first'] == '2026-09-29', by['2024-10-14']
+assert by['2024-09-01']['table_rows'] == 0 and 'No data found' in by['2024-09-01']['hint'], by['2024-09-01']
+assert 'boom' in by['2023-01-01']['error'], by['2023-01-01']
+assert not os.path.exists(U.CSV_PATH)
 print('সব টেস্ট পাস')
