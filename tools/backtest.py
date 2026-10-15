@@ -21,7 +21,7 @@ import pandas as pd
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "scripts"))
-from phase_engine import Cfg, PHASES, build_panel, classify, load_prices, cfg_dict  # noqa: E402
+from phase_engine import Cfg, PHASES, build_panel, classify, load_all_prices, cfg_dict  # noqa: E402
 
 H = (10, 20, 40)
 COST = 0.005
@@ -103,7 +103,7 @@ def sim_stats(t, cut):
 
 def main():
     cfg = Cfg()
-    prices = load_prices(os.path.join(ROOT, "docs", "data", "prices.csv"))
+    prices = load_all_prices(ROOT)
     F = add_excess(classify(build_panel(prices, cfg, cost=COST, horizons=H), cfg))
     last_date = F["date"].max()
     print(f"ডেটা: {prices['date'].min()} থেকে {last_date}, {prices['code'].nunique()} কোড")
