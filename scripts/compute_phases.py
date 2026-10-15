@@ -77,6 +77,8 @@ def main():
             'en': rnd(r['close']) if r['plan'] else None, 'sl': rnd(r['stop']), 'tg': rnd(r['target']), 'rr': rnd(r['rrr'], 1),
             'al': int(r['alloc']), 'ac': r['act'] or None, 'late': bool(r['late']), 'fl': flags,
             'wl': bool(lowcap) if lowcap is not None else ('STEALTH' in flags),
+            'gl': int(r['glvl']) if r['glvl'] == r['glvl'] else None, 'ga': int(r['gage']) if r['gage'] == r['gage'] else None,
+            'gb': int(r['gbal']) if r['gbal'] == r['gbal'] else None,
             'lq': bool(r['liquid']), 'sp': [rnd(x) for x in g['close'].tail(50).tolist()],
         })
     order = {p: i for i, p in enumerate(PHASES)}

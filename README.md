@@ -22,6 +22,8 @@
 - `scripts/update_data.py` — DSE থেকে দৈনিক ডেটা (`docs/data/prices.csv`)
 - `scripts/update_fundamentals.py` — Paid-up ও P/E (`docs/data/fundamentals.csv`, সপ্তাহে একবার); হাতে দিতে চাইলে `docs/data/fundamentals_manual.csv` (`SYMBOL,PAIDUP_MN,PE,CATEGORY`), এটি অগ্রাধিকার পায়
 - `scripts/phase_engine.py` — সব নিয়ম (ব্যাকটেস্ট ও দৈনিক স্ক্যান একই কোড, ভবিষ্যৎ দেখে না)
+- `scripts/wyckoff_struct.py` — ওয়াইকফ গঠনের ধারাবাহিকতা যাচাই (SC → AR → ST, BC → AR → ST); পেজের "গঠন" কলাম ও ব্যাকটেস্টের নিশ্চিত-বনাম-বাকি তুলনা এখান থেকে। ফেজ-লেবেল বদলায় না, শুধু যাচাই যোগ করে; থ্রেশহোল্ড আমাদের, ফল দেখে টিউন করা হয়নি
+- `scripts/check_history.py` — `history/*.csv` যাচাই (কলাম, তারিখ `YYYY-MM-DD`, ডুপ্লিকেট, ফাঁক)
 - `scripts/compute_phases.py` — আজকের ফেজ/প্ল্যান → `docs/data/phases.json`
 - `tools/backtest.py` — রিপোর্টের নিয়ম যেমন আছে তেমন ব্যাকটেস্ট + সেটআপের ট্রেড-সিমুলেশন → `docs/data/backtest.json`
 - `.github/workflows/update.yml` — Sun–Thu বাজার বন্ধের পর দিনে কয়েকবার অটো আপডেট

@@ -123,6 +123,30 @@ def main():
                              "train": {"h20": block(tr, 20)}, "test": {"h20": block(te, 20)}}
     out["baseline"] = {f"h{h}": float(F[liq][f"r{h}"].mean() * 100) for h in H}
 
+    # --- গঠন-যাচাই: ফেজ-ইভেন্টের দিনে SC/BC → AR → ST গঠন নিশ্চিত (স্তর ২) ছিল কিনা, তার ভিত্তিতে ভাগ।
+    # থ্রেশহোল্ড scripts/wyckoff_struct.py-তে আগে থেকে ঠিক করা, এই ফল দেখে বদলানো হয়নি।
+    out["struct"] = {}
+    groups = {"Phase B": ["Phase B"], "Phase C": ["Phase C"], "Phase D": ["Phase D"], "Phase E": ["Phase E"],
+              "Phase B–E (একত্রে)": ["Phase B", "Phase C", "Phase D", "Phase E"], "Distribution": ["Distribution"]}
+    for name, phs in groups.items():
+        e = ev[ev["phase"].isin(phs)]
+        rec = {}
+        for lbl, sub in (("confirmed", e[e["glvl"] == 2]), ("partial", e[e["glvl"] == 1]), ("none", e[e["glvl"] == 0])):
+            rec[lbl] = {"events": int(len(sub)), "all": block(sub, 20), "test": block(sub[sub["date"] >= cut], 20)}
+        # নিশ্চিত বনাম বাকি (আংশিক + নেই): পার্থক্য সত্যিই আলাদা করা যায় কিনা
+        e2 = e[e["x20"].notna()]
+        c2, r2 = e2[e2["glvl"] == 2], e2[e2["glvl"] < 2]
+        d = {"event_pp": None, "month_pp": None, "t": None}
+        if len(c2) and len(r2):
+            d["event_pp"] = float((c2["x20"].mean() - r2["x20"].mean()) * 100)
+            j = pd.concat([c2.groupby(c2["date"].str[:7])["x20"].mean(), r2.groupby(r2["date"].str[:7])["x20"].mean()], axis=1, keys=["c", "r"]).dropna()
+            dm = (j["c"] - j["r"]) * 100
+            if len(dm) >= 3 and dm.std(ddof=1) > 0:
+                d["month_pp"] = float(dm.mean())
+                d["t"] = float(dm.mean() / (dm.std(ddof=1) / np.sqrt(len(dm))))
+        rec["diff"] = d
+        out["struct"][name] = rec
+
     # --- সেটআপ: প্রথম-দিন ইভেন্ট ও ট্রেড-সিমুলেশন
     prev = F.groupby("code")["setup"].shift().fillna(False).astype(bool)
     sev = F[liq & F["setup"] & ~prev]
@@ -156,6 +180,14 @@ def main():
         notes.append(f"<b>এন্ট্রি-যোগ্য সেটআপ:</b> {s['n']}টি ট্রেডে গড় {s['avg_r']:+.2f}R, জেতার হার {s['win']:.0f}%। "
                      "প্রতিটি ট্রেডে ১:৩-এর পরিকল্পনা থাকলেও বাস্তবে টার্গেটে পৌঁছানোর হার কত তা ওপরের সারণিতে (টার্গেট/স্টপ/সময়)।")
     out["notes"] = notes
+
+    def _clean(o):
+        if isinstance(o, dict):
+            return {k: _clean(v) for k, v in o.items()}
+        if isinstance(o, list):
+            return [_clean(v) for v in o]
+        return None if isinstance(o, float) and not np.isfinite(o) else o
+    out = _clean(out)                                         # NaN সরিয়ে null: JS-এর JSON.parse NaN পড়তে পারে না
 
     path = os.path.join(ROOT, "docs", "data", "backtest.json")
     with open(path, "w", encoding="utf-8") as f:

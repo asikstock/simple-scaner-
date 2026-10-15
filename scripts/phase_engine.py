@@ -24,6 +24,11 @@ import os
 import numpy as np
 import pandas as pd
 
+try:                                     # স্ক্রিপ্ট হিসেবে ও মডিউল হিসেবে দুভাবেই চলে
+    from wyckoff_struct import wyckoff_struct
+except ImportError:                      # pragma: no cover
+    from scripts.wyckoff_struct import wyckoff_struct
+
 PHASES = ["Phase A", "Phase B", "Phase C", "Phase D", "Phase E", "Distribution", "Markdown"]
 BULL = {"Phase A", "Phase B", "Phase C", "Phase D", "Phase E"}
 BEAR = {"Distribution", "Markdown"}
@@ -71,6 +76,13 @@ class Cfg:
     min_value: float = 3e6       # ২০ দিনের গড় দৈনিক লেনদেন (টাকা): এর নিচে অলিকুইড
     max_zero_days: int = 4
     strong_score: int = 65
+    # ---- গঠন-যাচাই (scripts/wyckoff_struct.py): আমাদের অপারেশনাল সংজ্ঞা, ব্যাকটেস্টের ফল দেখে বদলানো হয়নি ----
+    ar_win: int = 15             # SC/BC-র পর AR খোঁজার দিন
+    ar_min: float = 0.30         # AR-কে আগের চলনের অন্তত এই অংশ ফিরিয়ে আনতে হবে
+    st_vol: float = 0.6          # ST-এর ভলিউম ≤ SC/BC-র ভলিউমের এই গুণ
+    st_band: float = 0.05        # ST = SC লো / BC হাই-এর ±৫%
+    struct_brk: float = 0.05     # SC লো-র ৫% নিচে (বা BC হাই-র ৫% ওপরে) ক্লোজ = গঠন বাতিল
+    struct_age: int = 150        # SC/BC-র পর সর্বোচ্চ কতদিন গঠন ধরা হবে
 
 
 def clean(df):
@@ -268,6 +280,11 @@ def base_features(df, cfg=Cfg()):
     s = smc_structure(df["open"].to_numpy(float), ha, la, ca, cfg.swing_k)
     for k_, a in s.items():
         f[k_] = a
+    # --- ওয়াইকফ গঠনের ধারাবাহিকতা (SC → AR → ST / BC → AR → ST)
+    ws = wyckoff_struct(ha, la, ca, v.to_numpy(float), f["e_sc"].to_numpy(), f["e_bc"].to_numpy(),
+                        f["h120"].to_numpy(float), l.rolling(120).min().to_numpy(float), cfg)
+    for k_, a in ws.items():
+        f[k_] = a
     return f
 
 
@@ -358,6 +375,14 @@ def classify(F, cfg=Cfg(), fund=None):
     bear_s = (np.clip(-F["vb"], 0, 0.5) / 0.5 * 30 + vrs + ma_bear + (F["trend"] == -1) * 15 + F["lowcap"] * 15).fillna(0)
     F["score"] = np.where(ph.isin(list(BULL)), bull_s, np.where(ph.isin(list(BEAR)), bear_s, 0)).round().clip(0, 100)
     F["stealth"] = F["stealth_age"] <= cfg.stealth_win
+
+    # --- গঠন-স্তর: ফেজের পাশ অনুযায়ী (Phase A–E → অ্যাকিউমুলেশন-গঠন; Distribution → ডিস্ট্রিবিউশন-গঠন; Markdown/ফেজহীন → নেই)।
+    # ০ = গঠন নেই/বাতিল, ১ = SC/BC + AR, ২ = SC/BC + AR + ST (নিশ্চিত)। ফেজ-লেবেল বা স্কোর এতে বদলায় না।
+    is_acc = ph.isin(list(BULL))
+    is_dist_ph = ph == "Distribution"
+    F["glvl"] = np.where(is_acc, F["gacc_lvl"], np.where(is_dist_ph, F["gdist_lvl"], np.nan))
+    F["gage"] = np.where(is_acc, F["gacc_age"], np.where(is_dist_ph, F["gdist_age"], np.nan))
+    F["gbal"] = np.where(is_acc, F["gacc_dem"], np.where(is_dist_ph, F["gdist_sup"], np.nan))
 
     key = F["phase"].fillna("∅")
     grp = (key != key.shift()).cumsum()

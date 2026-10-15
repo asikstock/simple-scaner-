@@ -99,4 +99,38 @@ r1 = parse_company('<table><tr><th>Authorized Capital (mn)</th><th>Paid-up Capit
                    '<table><tr><td>Market Category</td><td>A</td></tr><tr><td>P/E Ratio</td><td>18.2</td></tr></table>')
 assert r1 == {'PAIDUP_MN': 1234.5, 'PE': 18.2, 'CATEGORY': 'A'}, r1
 assert parse_company('<html></html>')['PAIDUP_MN'] is None
+# ৮. ওয়াইকফ গঠন-যাচাই (SC → AR → ST): স্তর, বাতিল, ভবিষ্যৎ-না-দেখা, আয়না (BC)
+from wyckoff_struct import wyckoff_struct  # noqa: E402
+n_ = 200
+c_ = np.full(n_, 120.0); h_ = c_ * 1.01; l_ = c_ * 0.99; v_ = np.full(n_, 1000.0)
+c_[100], l_[100], h_[100], v_[100] = 101, 100, 105, 10000                     # সেলিং ক্লাইম্যাক্স
+for i_, x_ in zip(range(101, 109), [108, 114, 120, 126, 132, 136, 139, 138]):  # AR: পতনের (২০০−১০০) ৪০% ফেরত
+    c_[i_], h_[i_], l_[i_] = x_, x_ + 1, x_ - 1
+for i_ in range(109, 125):
+    c_[i_] = 138 - (i_ - 108) * 2.2; h_[i_] = c_[i_] + 1; l_[i_] = c_[i_] - 1
+c_[125], l_[125], h_[125], v_[125] = 104, 102, 106, 3000                       # ST: লো-র কাছে, ভলিউম ≤ ০.৬ × SC
+for i_ in range(126, 150):
+    c_[i_], h_[i_], l_[i_] = 110, 111, 109
+sc_ = np.zeros(n_, bool); sc_[100] = True
+z_ = np.zeros(n_, bool)
+H120, L120 = np.full(n_, 200.0), np.full(n_, 50.0)
+w = wyckoff_struct(h_, l_, c_, v_, sc_, z_, H120, L120)
+assert w['gacc_lvl'][99] == 0 and np.isnan(w['gacc_age'][99])                  # SC-র আগে কিছু নেই
+assert w['gacc_lvl'][104] == 0                                                 # AR এখনও ৩০%-এ পৌঁছায়নি (০.২৭)
+assert w['gacc_lvl'][114] == 1 and w['gacc_lvl'][120] == 1                     # SC + AR, ST এখনও নয়
+assert w['gacc_lvl'][125] == 2 and w['gacc_st'][125] and w['gacc_lvl'][149] == 2   # ST-র পর নিশ্চিত
+c2_, l2_, h2_ = c_.copy(), l_.copy(), h_.copy()
+c2_[150:], l2_[150:], h2_[150:] = 90, 89, 91                                   # SC লো-র ৫%-এর বেশি নিচে ক্লোজ
+w2 = wyckoff_struct(h2_, l2_, c2_, v_, sc_, z_, H120, L120)
+assert w2['gacc_lvl'][155] == 0                                                # গঠন বাতিল
+w3 = wyckoff_struct(h2_[:130], l2_[:130], c2_[:130], v_[:130], sc_[:130], z_[:130], H120[:130], L120[:130])
+assert np.array_equal(w2['gacc_lvl'][:130], w3['gacc_lvl'])                    # ভবিষ্যৎ বদলালে অতীত বদলায় না
+bc_ = np.zeros(n_, bool); bc_[100] = True                                      # আয়না: দাম উল্টে দিলে BC-গঠন
+w4 = wyckoff_struct(300 - l_, 300 - h_, 300 - c_, v_, z_, bc_, np.full(n_, 250.0), np.full(n_, 100.0))
+assert w4['gdist_lvl'][125] == 2 and w4['gdist_st'][125]
+# ইঞ্জিনে: গঠন-কলাম যোগ হলেও বিদ্যমান dist_age ইত্যাদি ওভাররাইট হয়নি, আর ফেজ-নির্ধারণ একই
+assert {'gacc_lvl', 'gdist_lvl', 'glvl', 'gage', 'gbal', 'dist_age', 'dist_hi'} <= set(F.columns)
+assert F['glvl'].dropna().isin([0, 1, 2]).all()
+assert F.loc[F['phase'] == 'Markdown', 'glvl'].isna().all()
+
 print('সব টেস্ট পাস')

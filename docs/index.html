@@ -148,6 +148,7 @@ const COLS = [
   {k:'p',   t:'ফেজ',        cls:'l',      get:s=>s.p?PMAP[s.p].i:99, only:['__setup','__watch','']},
   {k:'sc',  t:'স্কোর',      get:s=>s.sc, help:SCORE_HELP},
   {k:'d',   t:'ফেজে দিন',   get:s=>s.d, help:'টানা কত ট্রেডিং-দিন এই ফেজে আছে (১ = আজই ঢুকেছে)'},
+  {k:'gl',  t:'গঠন',        get:s=>s.gl==null?-1:s.gl, help:'ওয়াইকফের ধারাবাহিক গঠন যাচাই: অ্যাকিউমুলেশন ফেজে SC → AR → ST, Distribution-এ BC → AR → ST। ✔ নিশ্চিত = তিনটিই হয়েছে; ◐ আংশিক = SC/BC ও AR আছে, ST নেই; ✖ নেই = গঠন তৈরি হয়নি বা ভেঙে গেছে। ফেজ-লেবেল এতে বদলায় না — এটা অতিরিক্ত যাচাই'},
   {k:'cl',  t:'দাম',        get:s=>s.cl, help:'শেষ ক্লোজ (টাকা)'},
   {k:'ch',  t:'পরিবর্তন%',  get:s=>s.ch, help:'আগের দিনের তুলনায়। ≥ ৯.৫% = আপার সার্কিটের কাছাকাছি'},
   {k:'en',  t:'এন্ট্রি',     get:s=>s.en, tabs:'plan', help:'প্রস্তাবিত এন্ট্রি (আজকের ক্লোজ; বাস্তবে পরদিন)'},
@@ -165,6 +166,17 @@ const COLS = [
   {k:'val', t:'গড় লেনদেন', get:s=>s.val, help:'২০ দিনের গড় দৈনিক লেনদেন (মিলিয়ন টাকা)'},
   {k:'sp',  t:'৫০ দিন',     get:null, nosort:true, help:'শেষ ৫০ দিনের ক্লোজ'},
 ];
+function structBadge(s){
+  if(s.gl==null) return '<span class="note">–</span>';
+  const dist = s.p==='Distribution', anc = dist?'BC':'SC';
+  const age = s.ga!=null?` ${anc}-র ${s.ga} দিন পর।`:'';
+  const bal = s.gb==null?'':(dist
+      ? (s.gb?' AR-এর পর বিক্রির ভলিউম ≥ কেনার (সরবরাহ প্রবল)।':' AR-এর পর বিক্রির ভলিউম কম।')
+      : (s.gb?' AR-এর পর কেনার ভলিউম ≥ বিক্রির (চাহিদা কম নয়)।':' AR-এর পর বিক্রির ভলিউম বেশি।'));
+  if(s.gl===2) return `<span class="chip hot" title="${anc} → AR → ST নিশ্চিত.${age}${bal}">✔ নিশ্চিত</span>`;
+  if(s.gl===1) return `<span class="chip" title="${anc} ও AR আছে, ST এখনও নয়.${age}${bal}">◐ আংশিক</span>`;
+  return `<span class="chip bad" title="${anc} → AR → ST গঠন তৈরি হয়নি, বা ভেঙে গেছে। লেবেলটি শুধু একটি ক্যান্ডেল-প্যাটার্ন।">✖ নেই</span>`;
+}
 const PLANTABS = new Set(['__setup','Phase C','Phase D','Phase E','']);
 function colVisible(c){
   if(c.only && !c.only.includes(tab)) return false;
@@ -253,6 +265,7 @@ function render(){
       p:`<td class="l">${p?`<span class="badge" style="--c:${col}">${esc(p.k)}</span>`:'<span class="note">অনির্দিষ্ট</span>'}</td>`,
       sc:`<td><span class="sc" style="--c:${col}">${p?`<b>${s.sc}</b>${s.sc>=DATA.config.strong_score?' ★':''}<span class="bar"><i style="width:${s.sc}%"></i></span>`:'–'}</span></td>`,
       d:`<td>${p?s.d+(s.d===1?`<span class="new" style="--c:${col}">নতুন</span>`:''):'–'}</td>`,
+      gl:`<td>${structBadge(s)}</td>`,
       cl:`<td>${fmt(s.cl)}</td>`,
       ch:`<td class="${s.ch>0?'up':s.ch<0?'dn':''}">${sgn(s.ch)}${s.uc>0?` <span class="chip hot" style="--c:var(--distribution)" title="গত ১০ দিনে আপার সার্কিট (≥ ৯.৫%) ${s.uc} বার">UC×${s.uc}</span>`:''}</td>`,
       vr:`<td class="${s.vr>=DATA.config.vr_thr?'up':''}" title="গত ৫ দিনের সর্বোচ্চ VR ${fmt(s.vr5)}">${s.vr==null?'–':'<b>'+fmt(s.vr)+'</b>'} <span class="note">(${fmt(s.vr5,1)})</span></td>`,
@@ -294,6 +307,9 @@ function renderRules(){
       <tr><td>Distribution</td><td>BC, UTAD, SOW</td><td>BC: VR ≥ ${C.vr_thr}, ৬০ দিনের উচ্চের কাছে, ক্লোজ দিনের নিচের অর্ধে। UTAD: রেঞ্জ-হাই ছাড়িয়ে গিয়ে ক্লোজ ভেতরে, VR ≥ ${C.dist_vr}। SOW: VR ≥ ২ সহ বেয়ারিশ পিনবার, বা সাপোর্ট ক্লোজে ভাঙা (VR ≥ ${C.dist_vr})। সবই আগে ঊর্ধ্বমুখী থাকলে, গত ${C.dist_win} দিনে</td><td>০% (ক্যাশ)</td></tr>
       <tr><td>Markdown</td><td>ক্রেতাহীন ধস</td><td>দাম &lt; SMA20 &lt; SMA50, SMA50 নিম্নমুখী</td><td>০%</td></tr>
     </tbody></table></div>
+    <p><b>৩ক. গঠন-যাচাই (ওয়াইকফের ধারাবাহিকতা)</b> — ফেজ-লেবেল আলাদা আলাদা ক্যান্ডেল-প্যাটার্ন ধরে। "গঠন" কলাম জিজ্ঞেস করে: সেই প্যাটার্নের আগে ওয়াইকফ-বর্ণিত গঠন আসলেই তৈরি হয়েছিল কি? অ্যাকিউমুলেশন ফেজে <b>SC → AR → ST</b>, Distribution-এ <b>BC → AR → ST</b>।
+      AR = SC/BC-র পর ${C.ar_win} দিনের মধ্যে আগের চলনের অন্তত ${Math.round(C.ar_min*100)}% ফেরত আসা; ST = AR-এর পর SC লো / BC হাই-এর ±${Math.round(C.st_band*100)}%-এ ফিরে সেদিনের ভলিউম SC/BC-র ${C.st_vol} গুণের মধ্যে থাকা; SC লো-র ${Math.round(C.struct_brk*100)}% নিচে ক্লোজ করলে গঠন বাতিল।
+      <b>✔ নিশ্চিত</b> = তিনটিই; <b>◐ আংশিক</b> = SC/BC ও AR; <b>✖ নেই</b> = গঠন নেই বা ভেঙেছে। এটা ফেজ-লেবেল বা স্কোর বদলায় না। <span class="note">[সংখ্যাগুলো আমাদের অপারেশনাল সংজ্ঞা; ব্যাকটেস্টের ফল দেখে বদলানো হয়নি]</span></p>
     <p><b>৪. স্মার্ট মানি কনসেপ্ট (রিপোর্টের সংজ্ঞা)</b></p>
     <ul class="k">
       <li><b>সুইং হাই/লো:</b> দুই পাশে ${C.swing_k} দিনের চেয়ে উঁচু/নিচু; ${C.swing_k} দিন পরে নিশ্চিত হয় (ভবিষ্যৎ দেখা নেই)।</li>
@@ -312,6 +328,12 @@ function renderBT(){
   const tcls = t => t==null?'':(Math.abs(t)>=2?(t>0?'up':'dn'):'');
   const rows = PH.map(p=>{ const r=BT.phases[p.k]; if(!r) return ''; const a=r.all.h20||{}, te=r.test.h20||{};
     return `<tr><td class="l"><span class="badge" style="--c:${p.c}">${p.k}</span></td><td>${int(r.events)}</td><td>${f(a.net)}%</td><td>${f(a.excess)}%</td><td class="${tcls(a.t)}">${f(a.t,1)}</td><td>${f(te.excess)}% <span class="note">(${te.n||0})</span></td></tr>`; }).join('');
+  const SG = BT.struct||{};
+  const gcell = x=>{ if(!x||!x.events) return '<td class="note">–</td>'; const a=x.all||{}; return `<td>${int(x.events)} · ${f(a.excess)}% <span class="note">(t=${f(a.t,1)})</span></td>`; };
+  const grows = Object.keys(SG).map(k=>{ const r=SG[k], d=r.diff||{};
+    return `<tr><td class="l">${esc(k)}</td>${gcell(r.confirmed)}${gcell(r.partial)}${gcell(r.none)}<td>${d.event_pp==null?'–':f(d.event_pp)+'pp'} / ${d.month_pp==null?'–':f(d.month_pp)+'pp'} <span class="note">(t=${f(d.t,1)})</span></td></tr>`; }).join('');
+  const sgBlock = grows ? `<p class="note" style="margin-top:12px"><b>গঠন-যাচাই:</b> ফেজে ঢোকার দিনে SC/BC → AR → ST গঠন নিশ্চিত ছিল কিনা, তার ভিত্তিতে ভাগ। প্রতি ঘরে ইভেন্ট সংখ্যা · ২০ দিনে বাজারের গড়ের চেয়ে অতিরিক্ত রিটার্ন (t)। শেষ ঘর = নিশ্চিত বনাম বাকিদের পার্থক্য (ইভেন্ট-ওজনে / মাস-ওজনে); |t| ≥ ২ না হলে পার্থক্যকে ভরসাযোগ্য ধরা যায় না।</p>
+    <div class="tw" style="max-height:none"><table><thead><tr><th class="l">ফেজ</th><th>✔ নিশ্চিত</th><th>◐ আংশিক</th><th>✖ নেই</th><th>নিশ্চিত − বাকি</th></tr></thead><tbody>${grows}</tbody></table></div>` : '';
   const S = BT.setups||{}, names={ALL:'সব সেটআপ',D:'Phase D (LPS)',SMC:'CHOCH মিটিগেশন',C:'Phase C (স্প্রিং)'};
   const srows = ['ALL','D','SMC','C'].filter(k=>S[k]).map(k=>{ const r=S[k];
     return `<tr><td class="l">${names[k]}</td><td>${int(r.n)}</td><td>${f(r.win,0,false)}%</td><td>${f(r.avg_r)}R</td><td>${f(r.med_r)}R</td><td>${f(r.tp,0,false)}% / ${f(r.sl,0,false)}% / ${f(r.time,0,false)}%</td><td>${f(r.train.avg_r)}R <span class="note">(${r.train.n})</span></td><td>${f(r.test.avg_r)}R <span class="note">(${r.test.n})</span></td></tr>`; }).join('');
@@ -319,6 +341,7 @@ function renderBT(){
   el.innerHTML = `<details open><summary>ব্যাকটেস্ট (${esc(BT.first_date)} থেকে ${esc(BT.generated_for)}, ~${Math.max(1,Math.round((new Date(BT.generated_for)-new Date(BT.first_date))/31557600000))} বছর, ${BT.n_codes}টি কোড)</summary>
     <p class="note">রিপোর্টের নিয়ম <b>যেমন আছে তেমন</b> (কোনো থ্রেশহোল্ড টিউন করা হয়নি) পুরো ইতিহাসে চালানো। শুধু লিকুইড শেয়ার, খরচ ${BT.cost_pct}% (আসা-যাওয়া মিলিয়ে)। ফেজে "নতুন ঢুকলে" পরদিন OPEN-এ কিনে ২০ দিন পরের ক্লোজে বের হলে কী হতো; "অতিরিক্ত" = সেই দিনের সব লিকুইড শেয়ারের গড়ের চেয়ে কত বেশি; t-মান মাসভিত্তিক ক্লাস্টার করা (|t| ≥ ২ হলে মোটামুটি টেকসই)। TEST = ${esc(BT.split_date)}-এর পরের অর্ধ। বেসলাইন (সব লিকুইড শেয়ার, ২০ দিন): ${f(BT.baseline.h20)}%।</p>
     <div class="tw" style="max-height:none"><table><thead><tr><th class="l">ফেজ</th><th>ইভেন্ট</th><th>২০ দিনে নেট রিটার্ন</th><th>অতিরিক্ত</th><th>t</th><th>TEST অতিরিক্ত</th></tr></thead><tbody>${rows}</tbody></table></div>
+    ${sgBlock}
     <p class="note" style="margin-top:12px"><b>সেটআপের ট্রেড-সিমুলেশন:</b> সেটআপ প্রথম দেখা দিলে পরদিন OPEN-এ এন্ট্রি, রিপোর্টের স্টপ ও টার্গেটসহ (একই দিনে দুটোই ছুঁলে স্টপ ধরা হয়), সর্বোচ্চ ৪০ দিন। R = ঝুঁকির (এন্ট্রি − স্টপ) গুণিতক, খরচ বাদে। শেষ ঘরের তিনটি = টার্গেটে / স্টপে / সময় শেষে বের হওয়ার হার।</p>
     <div class="tw" style="max-height:none"><table><thead><tr><th class="l">সেটআপ</th><th>ট্রেড</th><th>জেতা%</th><th>গড় R</th><th>মধ্যমা R</th><th>টার্গেট / স্টপ / সময়</th><th>TRAIN গড় R</th><th>TEST গড় R</th></tr></thead><tbody>${srows}</tbody></table></div>
     <ul class="k">${stx}${(BT.notes||[]).map(n=>`<li>${n}</li>`).join('')}</ul>
