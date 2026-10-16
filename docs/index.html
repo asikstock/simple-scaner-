@@ -93,6 +93,7 @@ footer{color:var(--mute);font-size:.8rem;margin:16px 0 30px}
 
   <div class="box rules" id="rules" style="margin-top:16px"></div>
   <div class="box bt" id="bt" style="margin-top:16px"></div>
+  <div class="box bt" id="pbt" style="margin-top:16px"></div>
 
   <footer>
     শিক্ষামূলক টুল, বিনিয়োগ পরামর্শ নয়। ফেজ ও সেটআপ হলো অতীত দাম-ভলিউমের ওপর নিয়মভিত্তিক লেবেল; এটি ভবিষ্যৎ লাভের নিশ্চয়তা দেয় না। অপারেটর-চালিত শেয়ারে হঠাৎ সার্কিট-হল্ট ও ধসের ঝুঁকি আছে। ডেটা: DSE (old.dsebd.org), প্রতিদিন কয়েকবার অটো আপডেট।
@@ -123,7 +124,31 @@ const SETUP = {k:'__setup', bn:'এন্ট্রি-যোগ্য সেট�
 const WATCH = {k:'__watch', bn:'অপারেটর ওয়াচ', c:'var(--watch)',
   d:'<b>অপারেটর ওয়াচলিস্ট</b> — স্বল্প পরিশোধিত মূলধন (Paid-up &lt; ৫০ কোটি টাকা) এমন শেয়ার, যেখানে ফ্লোটিং শেয়ার কম হওয়ায় সিন্ডিকেশন সহজ। সংকেত: <b>VR ≥ ২.৫ + ছোট বডি + সংকুচিত ATR</b> (গোপন অ্যাকিউমুলেশন) গত ৫ দিনে হলে "STEALTH" চিহ্ন। এটা শুধু প্রাথমিক ট্র্যাকিং; এন্ট্রি আসে ওপরের ফেজ/সেটআপ থেকে।'};
 const ALL = {k:'', bn:'মোট', c:'var(--acc)', d:'সব শেয়ার একসঙ্গে: ফেজের ক্রমে (A → E → Distribution → Markdown), প্রতি ফেজে স্কোর বেশি থেকে কম। যাদের স্পষ্ট ফেজ নেই তারা সবার শেষে।'};
-const TABS = [SETUP, ...PH, WATCH, ALL];
+/* ---------- বাইং/সেলিং প্রেসার ট্যাব (scripts/pressure_engine.py) ---------- */
+const PST = {buy:'বাইং হাই · সেলিং লো', sell:'সেলিং হাই · বাইং লো', neutral:'নিউট্রাল'};
+const pcfg = k => (DATA && DATA.pconfig) ? DATA.pconfig[k] : null;
+const REACH = () => `নাগালের ভেতরে = আজ আপার সার্কিটের কাছে নয়, ৩ দিনে ≥ ${Math.round(pcfg('ext3')*100)}% ও ৫ দিনে ≥ ${Math.round(pcfg('ext5')*100)}% ওঠেনি, SMA20-র ${Math.round(pcfg('ext_sma20')*100)}%+ ওপরে নয়`;
+function pEvid(st){
+  if(!PB || !PB.by_state) return '';
+  const t = PB.by_state.reach[st]; if(!t) return '';
+  const a=t.test.e5||{}, r=t.test.r1||{}; if(!a.n) return '';
+  const f=(x,d=2)=> x==null?'–':(x>0?'+':'')+Number(x).toFixed(d);
+  const verdict = a.t<=-2 ? 'অর্থাৎ এমন শেয়ারের পিছু ধরা গড়ে লোকসানি ছিল।' : a.t>=2 ? 'অর্থাৎ গড়ে সামান্য সুবিধা ছিল।' : 'অর্থাৎ টেকসই কোনো সুবিধা দেখা যায়নি।';
+  return `<div class="alert" style="margin-top:8px"><b>ব্যাকটেস্ট (${esc(PB.split_date)}-এর পরের অর্ধ, নাগালের ভেতরে, ${int(a.n)}টি পর্যবেক্ষণ):</b> এই অবস্থার শেয়ার পরদিন বাজার-গড়ের চেয়ে ${f(r.excess)}% (t = ${f(r.t,1)}), এবং পরদিন ক্লোজে কিনে ৫ দিন ধরলে ${f(a.excess)}% (t = ${f(a.t,1)}) — ${verdict} পরদিন বাড়ার সম্ভাবনা: ${r.hit}% (সব শেয়ারের ভিত্তি ≈ ${PB.by_state.reach.neutral.all.r1.hit}%)। বিস্তারিত নিচের "প্রেসার ব্যাকটেস্ট" অংশে।</div>`;
+}
+const PBUY = {k:'__pbuy', bn:'বাইং হাই · সেলিং লো', c:'var(--up)',
+  get d(){ return `<b>বাইং হাই · সেলিং লো</b> — কেনার চাপ বেশি, বিক্রির চাপ কম (বাইং চাপ − সেলিং চাপ ≥ ${pcfg('state_gap')}), এবং শেয়ারটি এখনও <b>নাগালের ভেতরে</b> (${REACH()})। ক্রম: ফারাক বেশি থেকে কম। এটা বর্ণনা — দাম-ভলিউম এখন কার পক্ষে ঝুঁকে আছে; কালকের দামের ভবিষ্যদ্বাণী নয়।${pEvid('buy')}`; }};
+const PSELL = {k:'__psell', bn:'সেলিং হাই · বাইং লো', c:'var(--dn)',
+  get d(){ return `<b>সেলিং হাই · বাইং লো</b> — বিক্রির চাপ বেশি, কেনার চাপ কম (সেলিং চাপ − বাইং চাপ ≥ ${pcfg('state_gap')}), নাগালের ভেতরে। ক্রম: ফারাক বেশি থেকে কম।${pEvid('sell')}`; }};
+const PNEU = {k:'__pneu', bn:'নিউট্রাল', c:'var(--none)',
+  get d(){ return `<b>নিউট্রাল</b> — দুই পক্ষের চাপের ফারাক ${pcfg('state_gap')}-এর কম। ক্রম: ভারসাম্যের সবচেয়ে কাছে থেকে।${pEvid('neutral')}`; }};
+const PGONE = {k:'__pgone', bn:'নাগালের বাইরে', c:'var(--distribution)',
+  get d(){ return `<b>নাগালের বাইরে</b> — ইতিমধ্যে বেশি দূর গেছে (${REACH()}; নিচের দিকে একই সীমা উল্টো)। আজকের ক্লোজে ঢোকা মানে পিছু ধাওয়া। "দিক" কলামে কোন দিকে গেছে তা আছে। ব্যাকটেস্টে এই দলে ${(PB&&PB.by_state)?`বাইং-হাই শেয়ার পরের ৫ দিনে বাজার-গড়ের চেয়ে ${(PB.by_state.gone.buy.all.e5.excess>0?'+':'')+PB.by_state.gone.buy.all.e5.excess}% (পুরো ইতিহাস)`:'কোনো সুবিধা'} পেয়েছে।`; }};
+const HALT = {k:'__halt', bn:'নিষ্ক্রিয় / হল্ট-সদৃশ', c:'var(--markdown)',
+  get d(){ return `<b>নিষ্ক্রিয় / হল্ট-সদৃশ</b> — আজ ভলিউম ০ (১ দিন = আজই নতুন নিষ্ক্রিয়) অথবা দাম সার্কিটে লক (সর্বোচ্চ = সর্বনিম্ন)। <b>সীমাবদ্ধতা:</b> DSE-র আসল হল্ট/ট্রেডিং-স্থগিত ঘোষণা আমাদের দৈনিক OHLCV ডেটায় নেই, তাই এটা শুধু ঘটার <i>পরের</i> চিহ্ন। আগাম আঁচ করা যায়নি: ব্যাকটেস্টে লিকুইড শেয়ারে পরদিন ভলিউম ০ হওয়ার হার ${PB&&PB.halt?PB.halt.base_rate_pct:'–'}%, আর VR বা সার্কিটের দিনেও তা উল্লেখযোগ্য বাড়েনি। লিকুইড টিক খোলা থাকলে দীর্ঘদিনের মৃত শেয়ার বাদ যায়; পুরোটা দেখতে টিক তুলুন।`; }};
+const PRT = [PBUY, PSELL, PNEU, PGONE, HALT];
+const PRK = new Set(PRT.map(p=>p.k));
+const TABS = [SETUP, ...PRT, ...PH, WATCH, ALL];
 const PMAP = Object.fromEntries(PH.map((p,i)=>[p.k,{...p,i}]));
 const SCORE_HELP = 'স্কোর (০–১০০)। বুলিশ ফেজ: VR শক্তি (২৫) + সংকুচিত ATR (১৫) + ভলিউম-ব্যালান্স (১৫) + কাঠামো: ট্রেন্ড (৫) ও সাম্প্রতিক CHOCH (১০) + এন্ট্রি-যোগ্য সেটআপ (১০) + Paid-up < ৫০ কোটি (২০)। বেয়ারিশ ফেজ: বিক্রির ভলিউম-ব্যালান্স (৩০) + VR শক্তি (২৫) + SMA-র নিচে (১৫) + বেয়ারিশ কাঠামো (১৫) + Paid-up < ৫০ কোটি (১৫)। Paid-up তথ্য না থাকলে ওই অংশ ০।';
 const ACT = {
@@ -135,7 +160,7 @@ const ACT = {
 const FLAGS = {SC:'SC', SPRING:'স্প্রিং', SOS:'SOS', BC:'BC', UTAD:'UTAD', SOW:'SOW', STEALTH:'STEALTH'};
 const BADFLAG = new Set(['BC','UTAD','SOW']);
 
-let DATA=null, BT=null, tab=SETUP.k, sortKey=null, sortDir=-1;
+let DATA=null, BT=null, PB=null, tab=PBUY.k, sortKey=null, sortDir=-1;
 const $ = id => document.getElementById(id);
 const esc = s => String(s??'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fmt = (x,d=2) => x==null ? '–' : Number(x).toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d});
@@ -145,10 +170,23 @@ const sgn = (x,d=2) => x==null ? '–' : (x>0?'+':'')+fmt(x,d);
 const COLS = [
   {k:'c',   t:'কোড',        cls:'l code', get:s=>s.c},
   {k:'s',   t:'সেক্টর',     cls:'l',      get:s=>s.s||''},
-  {k:'p',   t:'ফেজ',        cls:'l',      get:s=>s.p?PMAP[s.p].i:99, only:['__setup','__watch','']},
-  {k:'sc',  t:'স্কোর',      get:s=>s.sc, help:SCORE_HELP},
-  {k:'d',   t:'ফেজে দিন',   get:s=>s.d, help:'টানা কত ট্রেডিং-দিন এই ফেজে আছে (১ = আজই ঢুকেছে)'},
-  {k:'gl',  t:'গঠন',        get:s=>s.gl==null?-1:s.gl, help:'ওয়াইকফের ধারাবাহিক গঠন যাচাই: অ্যাকিউমুলেশন ফেজে SC → AR → ST, Distribution-এ BC → AR → ST। ✔ নিশ্চিত = তিনটিই হয়েছে; ◐ আংশিক = SC/BC ও AR আছে, ST নেই; ✖ নেই = গঠন তৈরি হয়নি বা ভেঙে গেছে। ফেজ-লেবেল এতে বদলায় না — এটা অতিরিক্ত যাচাই'},
+  {k:'p',   t:'ফেজ',        cls:'l',      get:s=>s.p?PMAP[s.p].i:99, only:['__setup','__watch','',...PRK], help:'ওয়াইকফ ফেজ — প্রেসারের পাশে দেখে নিন দুটো মেলে কি না'},
+  {k:'pscore', t:'প্রেসার স্কোর', get:s=>s.pscore, only:['__pbuy','__psell','__pneu','__pgone'], help:'০–১০০। ৫০ + (বাইং চাপ − সেলিং চাপ) ÷ ২। ৫০ = ভারসাম্য; ৫০-এর ওপরে কেনার দিকে, নিচে বিক্রির দিকে ঝোঁক'},
+  {k:'pbuy', t:'বাইং চাপ',   get:s=>s.pbuy, only:['__pbuy','__psell','__pneu','__pgone'], help:'০–১০০। ফ্লো (৪৫) + ভলিউম-ব্যালান্স (৩৫) + শোষণ (২০)-এর কেনার দিকের অংশ'},
+  {k:'psell', t:'সেলিং চাপ', get:s=>s.psell, only:['__pbuy','__psell','__pneu','__pgone'], help:'০–১০০। একই তিন উপাদানের বিক্রির দিকের অংশ'},
+  {k:'pst', t:'অবস্থা',     cls:'l', get:s=>s.pst||'', only:['__pgone'], help:'বাইং হাই · সেলিং লো / সেলিং হাই · বাইং লো / নিউট্রাল'},
+  {k:'gdir', t:'দিক',       cls:'l', get:s=>s.gn||'', only:['__pgone'], help:'↑ = ওপরে অনেক উঠে গেছে, ↓ = নিচে অনেক পড়ে গেছে'},
+  {k:'gwhy', t:'কারণ',      cls:'l', get:null, nosort:true, only:['__pgone'], help:'কোন শর্তে নাগালের বাইরে ধরা হয়েছে'},
+  {k:'fw3', t:'ফ্লো (৩দি)', get:s=>s.fw3, only:['__pbuy','__psell','__pneu','__pgone'], help:'৩ দিনের ভলিউম-ভারিত ক্লোজ-অবস্থান, −১..+১। +১ = প্রতিদিন রেঞ্জের মাথায় বন্ধ'},
+  {k:'bal', t:'ভলিউম-ব্যালান্স', get:s=>s.bal, only:['__pbuy','__psell','__pneu','__pgone'], help:'১০ দিনে (YCP-র ওপরে বন্ধ হওয়া দিনের ভলিউম − নিচে বন্ধের) ÷ মোট, −১..+১'},
+  {k:'ab',  t:'শোষণ',       get:s=>s.ab, only:['__pbuy','__psell','__pneu','__pgone'], help:'উচ্চ ভলিউম কিন্তু দাম প্রায় নড়েনি: +ve = ওপরে বন্ধ (চুপচাপ কেনা), −ve = নিচে বন্ধ (চুপচাপ বেচা); ৩ দিনের গড়'},
+  {k:'r5',  t:'৫ দিনে %',   get:s=>s.r5, only:['__pbuy','__psell','__pneu','__pgone'], help:'৫ দিনে দামের পরিবর্তন'},
+  {k:'dev', t:'SMA20 থেকে %', get:s=>s.dev, only:['__pbuy','__psell','__pneu','__pgone'], help:'ক্লোজ SMA20-র কত % ওপরে/নিচে'},
+  {k:'idle', t:'নিষ্ক্রিয় (দিন)', get:s=>s.idle, only:['__halt'], help:'টানা কত দিন ভলিউম ০। ১ = আজই নিষ্ক্রিয় হয়েছে'},
+  {k:'lk',  t:'সার্কিট-লক', cls:'l', get:s=>s.lk||'', only:['__halt'], help:'দিনের সর্বোচ্চ = সর্বনিম্ন (রেঞ্জ ০) এবং সার্কিট সীমায়: আপার = ক্রেতার লাইন, লোয়ার = বিক্রেতার লাইন'},
+  {k:'sc',  t:'স্কোর',      get:s=>s.sc, ph:true, help:SCORE_HELP},
+  {k:'d',   t:'ফেজে দিন',   get:s=>s.d, ph:true, help:'টানা কত ট্রেডিং-দিন এই ফেজে আছে (১ = আজই ঢুকেছে)'},
+  {k:'gl',  t:'গঠন',        get:s=>s.gl==null?-1:s.gl, ph:true, help:'ওয়াইকফের ধারাবাহিক গঠন যাচাই: অ্যাকিউমুলেশন ফেজে SC → AR → ST, Distribution-এ BC → AR → ST। ✔ নিশ্চিত = তিনটিই হয়েছে; ◐ আংশিক = SC/BC ও AR আছে, ST নেই; ✖ নেই = গঠন তৈরি হয়নি বা ভেঙে গেছে। ফেজ-লেবেল এতে বদলায় না — এটা অতিরিক্ত যাচাই'},
   {k:'cl',  t:'দাম',        get:s=>s.cl, help:'শেষ ক্লোজ (টাকা)'},
   {k:'ch',  t:'পরিবর্তন%',  get:s=>s.ch, help:'আগের দিনের তুলনায়। ≥ ৯.৫% = আপার সার্কিটের কাছাকাছি'},
   {k:'en',  t:'এন্ট্রি',     get:s=>s.en, tabs:'plan', help:'প্রস্তাবিত এন্ট্রি (আজকের ক্লোজ; বাস্তবে পরদিন)'},
@@ -156,10 +194,10 @@ const COLS = [
   {k:'tg',  t:'টার্গেট',    get:s=>s.tg, tabs:'plan', help:'রেঞ্জের রেজিস্ট্যান্স / আগের ডিস্ট্রিবিউশন হাই (শেষ ১২০ দিনের সর্বোচ্চ)'},
   {k:'rr',  t:'RRR',        get:s=>s.rr, tabs:'plan', help:'(টার্গেট − এন্ট্রি) ÷ (এন্ট্রি − স্টপ)। ন্যূনতম ৩ বাধ্যতামূলক'},
   {k:'al',  t:'পজিশন%',     get:s=>s.al, tabs:'plan', help:'রিপোর্টের সারণি: Phase C ৩০%, Phase D ৭০%, Phase E ১০০% হোল্ড, Distribution ০%'},
-  {k:'ac',  t:'করণীয়',     cls:'l', get:s=>s.ac||'', help:'রিপোর্টের নিয়ম অনুযায়ী করণীয়', nosort:true, tabs:'noMd'},
+  {k:'ac',  t:'করণীয়',     cls:'l', ph:true, get:s=>s.ac||'', help:'রিপোর্টের নিয়ম অনুযায়ী করণীয়', nosort:true, tabs:'noMd'},
   {k:'vr',  t:'VR',         get:s=>s.vr, help:'ভলিউম রেশিও VR = আজকের ভলিউম ÷ আগের ২০ দিনের গড় ভলিউম। ≥ ২.৫ = অপারেটর প্রবেশের সংকেত। ব্র্যাকেটে গত ৫ দিনের সর্বোচ্চ'},
-  {k:'sq',  t:'ATR স্কুইজ', get:s=>s.sq, help:'ATR14 ÷ গত ৬০ দিনের ATR14-এর গড়। ≤ ০.৮৫ = সংকুচিত অস্থিরতা'},
-  {k:'str', t:'কাঠামো',     get:s=>s.tr*100-(s.ca??99), help:'↑ = বুলিশ কাঠামো, ↓ = বেয়ারিশ। CHOCH যত দিন আগে। জোন: F = ০.৫–০.৬১৮ ফিবো, O = অর্ডার ব্লক, G = FVG-তে দাম আছে'},
+  {k:'sq',  t:'ATR স্কুইজ', ph:true, get:s=>s.sq, help:'ATR14 ÷ গত ৬০ দিনের ATR14-এর গড়। ≤ ০.৮৫ = সংকুচিত অস্থিরতা'},
+  {k:'str', t:'কাঠামো',     ph:true, get:s=>s.tr*100-(s.ca??99), help:'↑ = বুলিশ কাঠামো, ↓ = বেয়ারিশ। CHOCH যত দিন আগে। জোন: F = ০.৫–০.৬১৮ ফিবো, O = অর্ডার ব্লক, G = FVG-তে দাম আছে'},
   {k:'pu',  t:'Paid-up (কোটি)', get:s=>s.pu, help:'পরিশোধিত মূলধন (কোটি টাকা)। < ৫০ = স্বল্প-মূলধনী (ওয়াচলিস্ট)', needFund:true},
   {k:'pe',  t:'P/E',        get:s=>s.pe, help:'P/E > ৪০ হলে BSEC-র নিয়মে মার্জিন ঋণ বন্ধ', needFund:true},
   {k:'fl',  t:'সংকেত',      get:s=>(s.fl||[]).length, help:'গত ৫ দিনের ইভেন্ট: SC, স্প্রিং, SOS, BC, UTAD, SOW, STEALTH'},
@@ -180,6 +218,7 @@ function structBadge(s){
 const PLANTABS = new Set(['__setup','Phase C','Phase D','Phase E','']);
 function colVisible(c){
   if(c.only && !c.only.includes(tab)) return false;
+  if(c.ph && PRK.has(tab)) return false;
   if(c.needFund && !DATA.have_fund) return false;
   if(c.tabs==='plan' && !PLANTABS.has(tab) && tab!=='__watch') return false;
   if(c.tabs==='noMd' && (tab==='Markdown')) return false;
@@ -195,6 +234,11 @@ function spark(a, color){
 function inTab(s, k){
   if(k==='__setup') return s.ok;
   if(k==='__watch') return s.wl;
+  if(k==='__pbuy') return s.pst==='buy' && !s.gn;
+  if(k==='__psell') return s.pst==='sell' && !s.gn;
+  if(k==='__pneu') return s.pst==='neutral' && !s.gn;
+  if(k==='__pgone') return !!s.gn && !!s.pst;
+  if(k==='__halt') return s.idle>=1 || !!s.lk;
   return !k || s.p===k;
 }
 function passBase(s){
@@ -207,7 +251,7 @@ function passBase(s){
 function buildTabs(){
   const el = $('tabs'); el.innerHTML='';
   const base = DATA.stocks.filter(passBase);
-  TABS.forEach(p=>{
+  TABS.filter(p=>!PRK.has(p.k) || DATA.pconfig).forEach(p=>{
     const b=document.createElement('button'); b.className='tab'; b.type='button'; b.setAttribute('role','tab');
     b.setAttribute('aria-selected', String(p.k===tab)); b.style.setProperty('--c', p.c);
     const n = p.k==='' ? base.length : base.filter(s=>inTab(s,p.k)).length;
@@ -223,6 +267,18 @@ function structCell(s){
   const ch = s.ca!=null ? ` <span class="chip hot" style="--c:var(--up)" title="বুলিশ CHOCH ${s.ca} দিন আগে">CHOCH ${s.ca}দি</span>` : '';
   const z = s.z ? ` <span class="chip hot" style="--c:var(--setup)" title="মিটিগেশন জোনে দাম আছে (F ফিবো, O অর্ডার ব্লক, G FVG)">${esc(s.z)}</span>` : '';
   return t+ch+z;
+}
+
+const pcol = s => s.pst==='buy' ? 'var(--up)' : s.pst==='sell' ? 'var(--dn)' : 'var(--none)';
+function whyGone(s){
+  const r=[], up=s.gn==='up';
+  const uc=pcfg('uc_pct'), e3=pcfg('ext3')*100, e5=pcfg('ext5')*100, ed=pcfg('ext_sma20')*100;
+  if(s.lk) r.push(s.lk==='up'?'আপার সার্কিটে লক':'লোয়ার সার্কিটে লক');
+  if(s.ch!=null && Math.abs(s.ch)>=uc && ((s.ch>0)===up)) r.push(`আজ ${sgn(s.ch,1)}%`);
+  if(s.r3!=null && (up ? s.r3>=e3 : s.r3<=-e3)) r.push(`৩ দিনে ${sgn(s.r3,1)}%`);
+  if(s.r5!=null && (up ? s.r5>=e5 : s.r5<=-e5)) r.push(`৫ দিনে ${sgn(s.r5,1)}%`);
+  if(s.dev!=null && (up ? s.dev>=ed : s.dev<=-ed)) r.push(`SMA20 থেকে ${sgn(s.dev,1)}%`);
+  return r.join(' · ') || '–';
 }
 
 function render(){
@@ -242,6 +298,11 @@ function render(){
       return sortDir<0 ? -c : c;
     }
     if(tab==='__setup') return (b.rr||0)-(a.rr||0) || b.sc-a.sc;
+    if(tab==='__pbuy') return (b.pbuy-b.psell)-(a.pbuy-a.psell) || b.pscore-a.pscore || (a.c<b.c?-1:1);
+    if(tab==='__psell') return (b.psell-b.pbuy)-(a.psell-a.pbuy) || a.pscore-b.pscore || (a.c<b.c?-1:1);
+    if(tab==='__pneu') return Math.abs(a.pbuy-a.psell)-Math.abs(b.pbuy-b.psell) || (b.vr5||0)-(a.vr5||0) || (a.c<b.c?-1:1);
+    if(tab==='__pgone') return (a.gn===b.gn?0:a.gn==='up'?-1:1) || Math.abs(b.pscore-50)-Math.abs(a.pscore-50) || (a.c<b.c?-1:1);
+    if(tab==='__halt') return ((a.idle===1?0:1)-(b.idle===1?0:1)) || ((a.lk?0:1)-(b.lk?0:1)) || (b.val||0)-(a.val||0) || (a.c<b.c?-1:1);
     if(tab==='__watch') return (b.fl||[]).includes('STEALTH')-(a.fl||[]).includes('STEALTH') || b.sc-a.sc || (b.vr5||0)-(a.vr5||0);
     const pa=a.p?PMAP[a.p].i:99, pb=b.p?PMAP[b.p].i:99;
     return pa-pb || b.sc-a.sc || b.d-a.d || (a.c<b.c?-1:1);
@@ -253,7 +314,7 @@ function render(){
     const k=h.dataset.k; if(sortKey===k) sortDir=-sortDir; else {sortKey=k; sortDir=-1;} render();
   });
   if(!rows.length){
-    const msg = tab==='__setup' ? 'আজ রিপোর্টের সব শর্ত (বিশেষত RRR ≥ ১:৩) মেলে এমন কোনো সেটআপ নেই। এটা স্বাভাবিক — অধিকাংশ দিনই থাকে না। "Phase C" ও "Phase D" ট্যাবে অপেক্ষমাণ শেয়ার দেখুন।'
+    const msg = PRK.has(tab) ? 'এই ফিল্টারে কোনো শেয়ার নেই। ওপরের "শুধু লিকুইড" টিক তুলে বা সেক্টর/খোঁজ বদলে দেখুন।' : tab==='__setup' ? 'আজ রিপোর্টের সব শর্ত (বিশেষত RRR ≥ ১:৩) মেলে এমন কোনো সেটআপ নেই। এটা স্বাভাবিক — অধিকাংশ দিনই থাকে না। "Phase C" ও "Phase D" ট্যাবে অপেক্ষমাণ শেয়ার দেখুন।'
               : 'এই ফিল্টারে কোনো শেয়ার নেই। ওপরের "শুধু লিকুইড" টিক তুলে দেখুন।';
     $('tbl').tBodies[0].innerHTML=`<tr><td class="empty" colspan="${cols.length}">${msg}</td></tr>`; return;
   }
@@ -281,6 +342,19 @@ function render(){
       rr:`<td>${s.rr==null?'–':`<span class="${s.rr>=3?'tag-ok':'tag-no'}">১:${fmt(s.rr,1)}</span>`}</td>`,
       al:`<td>${s.al?s.al+'%':'–'}</td>`,
       val:`<td>${fmt(s.val,1)}</td>`,
+      pscore:`<td><span class="sc" style="--c:${pcol(s)}">${s.pscore==null?'–':`<b>${s.pscore}</b><span class="bar"><i style="width:${s.pscore}%"></i></span>`}</span></td>`,
+      pbuy:`<td class="${s.pst==='buy'?'up':''}">${s.pbuy==null?'–':s.pbuy}</td>`,
+      psell:`<td class="${s.pst==='sell'?'dn':''}">${s.psell==null?'–':s.psell}</td>`,
+      pst:`<td class="l">${s.pst?`<span class="chip hot" style="--c:${pcol(s)}">${PST[s.pst]}</span>`:'–'}</td>`,
+      gdir:`<td class="l">${s.gn==='up'?'<span class="up">↑ উঠে গেছে</span>':s.gn==='dn'?'<span class="dn">↓ পড়ে গেছে</span>':'–'}</td>`,
+      gwhy:`<td class="act">${esc(whyGone(s))}</td>`,
+      fw3:`<td class="${s.fw3>0?'up':s.fw3<0?'dn':''}">${sgn(s.fw3)}</td>`,
+      bal:`<td class="${s.bal>0?'up':s.bal<0?'dn':''}">${sgn(s.bal)}</td>`,
+      ab:`<td class="${s.ab>0?'up':s.ab<0?'dn':''}">${sgn(s.ab)}</td>`,
+      r5:`<td class="${s.r5>0?'up':s.r5<0?'dn':''}">${sgn(s.r5,1)}</td>`,
+      dev:`<td class="${s.dev>0?'up':s.dev<0?'dn':''}">${sgn(s.dev,1)}</td>`,
+      idle:`<td>${s.idle>=1?s.idle+(s.idle===1?' <span class="new" style="--c:var(--markdown)">নতুন</span>':''):'–'}</td>`,
+      lk:`<td class="l">${s.lk==='up'?'<span class="up">আপার লক</span>':s.lk==='dn'?'<span class="dn">লোয়ার লক</span>':'–'}</td>`,
       sp:`<td>${spark(s.sp,col)}</td>`,
     };
     return `<tr>${cols.map(c=>cell[c.k]).join('')}</tr>`;
@@ -288,7 +362,14 @@ function render(){
 }
 
 function renderRules(){
-  const C = DATA.config;
+  const C = DATA.config, P = DATA.pconfig;
+  const PRESS = P ? `
+    <p><b>৬. বাইং/সেলিং প্রেসার (আমাদের সংজ্ঞা — রিপোর্টের সূত্র নয়, ব্যাকটেস্টে টিউন করা হয়নি)</b></p>
+    <div class="formula">CLV = ((C − L) − (H − C)) ÷ (H − L) &nbsp;·&nbsp; ফ্লো = Σ(CLV × V) ÷ ΣV (৩ ও ১০ দিন) &nbsp;·&nbsp; ব্যালান্স = (V<sub>↑</sub> − V<sub>↓</sub>) ÷ (V<sub>↑</sub> + V<sub>↓</sub>) (১০ দিন)</div>
+    <p>শোষণ (ওয়াইকফের Effort vs Result) = প্রচেষ্টা × ফল-নেই × CLV-র চিহ্ন, প্রচেষ্টা = min(VR ÷ ${P.abs_vr_full}, ১), ফল-নেই = ১ − min(|C − YCP| ÷ ATR${P.atr_n}, ১); ৩ দিনের গড়। রেঞ্জ-লক (H = L) দিনে YCP-র ওপরে = +১, নিচে = −১; ভলিউম ০ = ০।</p>
+    <div class="formula">বাইং চাপ (০–১০০) = ১০০ × (${P.w_flow}·min(max(ফ্লো,০) ÷ ${P.flow_full},১) + ${P.w_bal}·min(max(ব্যালান্স,০) ÷ ${P.bal_full},১) + ${P.w_abs}·min(max(শোষণ,০) ÷ ${P.abs_full},১))<br>সেলিং চাপ = একই, নেগেটিভ অংশ নিয়ে &nbsp;·&nbsp; প্রেসার স্কোর = ৫০ + (বাইং − সেলিং) ÷ ২</div>
+    <p>ফারাক ≥ ${P.state_gap} হলে "বাইং হাই · সেলিং লো", ≤ −${P.state_gap} হলে "সেলিং হাই · বাইং লো", নইলে নিউট্রাল। নাগালের বাইরে = আজ ≥ ${P.uc_pct}% বা রেঞ্জ-লক, ৩ দিনে ≥ ${Math.round(P.ext3*100)}%, ৫ দিনে ≥ ${Math.round(P.ext5*100)}%, বা SMA20-র ${Math.round(P.ext_sma20*100)}%+ ওপরে (নিচের দিকে উল্টো)। YCP-র বদলে আগের ক্লোজ ধরা হয় শুধু YCP না থাকলে।</p>
+  ` : '';
   $('rules').innerHTML = `<details><summary>রিপোর্টের সূত্র ও নিয়ম — স্ক্যানার ঠিক কী হিসাব করে</summary>
     <p class="note">কোন সংখ্যা রিপোর্টের নিজস্ব আর কোনটা রিপোর্টে সংখ্যা না থাকায় আমাদের বসানো সংজ্ঞা, তা আলাদা করে লেখা আছে।</p>
     <p><b>১. ভলিউম রেশিও (রিপোর্টের সূত্র)</b></p>
@@ -318,6 +399,7 @@ function renderRules(){
       <li><b>মিটিগেশন জোন:</b> লেগের (স্প্রিং লো → সর্বোচ্চ) ${C.fib_lo}–${C.fib_hi} ফিবো / OB / FVG। দাম এর যেকোনোটিতে ঢুকলে ও ভলিউম কমলে এবং CHOCH-এর ${C.smc_win} দিনের মধ্যে ও ব্রেক-ক্যান্ডেলের পরের দিন থেকে এন্ট্রি-যোগ্য। ক্লোজ লেগ-লো-র নিচে গেলে বাতিল।</li>
     </ul>
     <p><b>৫. নিয়ন্ত্রক শর্ত (রিপোর্ট)</b>: সার্কিট ±১০% (আপার সার্কিট ধরতে দৈনিক ≥ ${C.uc_pct}%); Paid-up &lt; ${C.lowcap_mn/10} কোটি টাকা = ওয়াচলিস্ট; P/E &gt; ${C.pe_limit} হলে মার্জিন ঋণ বন্ধ (⚠ চিহ্ন)।</p>
+    ${PRESS}
     <p class="note">সীমাবদ্ধতা: DSE-তে প্রি-মার্কেট বা সার্কিট-হল্টের ভেতরের ডেটা নেই; সব হিসাব দৈনিক OHLCV থেকে। অপারেটর ধরা পড়ার পর রিটেইল-এর কাছে পৌঁছানোর আগেই সংকেত পুরনো হয়ে যেতে পারে।</p>
   </details>`;
 }
@@ -349,12 +431,52 @@ function renderBT(){
   </details>`;
 }
 
+function renderPB(){
+  const el=$('pbt'); if(!PB || !PB.by_state){ el.style.display='none'; return; }
+  const f=(x,d=2,sg=true)=> x==null||isNaN(x)?'–':(sg&&x>0?'+':'')+Number(x).toFixed(d);
+  const tc=t=>t==null?'':(Math.abs(t)>=2?(t>0?'up':'dn'):'');
+  const cell=(x,lab)=> (!x||!x.n)?'<td class="note">–</td>':`<td class="${tc(x.t)}">${f(x.excess)}% <span class="note">(t=${f(x.t,1)}; ${x.hit}% ${lab})</span></td>`;
+  const nm={buy:'বাইং হাই · সেলিং লো', neutral:'নিউট্রাল', sell:'সেলিং হাই · বাইং লো'};
+  const rows=g=>['buy','neutral','sell'].map(st=>{ const r=PB.by_state[g][st];
+    return `<tr><td class="l">${nm[st]}</td><td>${int(r.all.r1.n)}</td>${cell(r.all.r1,'বাড়ে')}${cell(r.test.r1,'বাড়ে')}${cell(r.all.e5,'জেতে')}${cell(r.test.e5,'জেতে')}</tr>`; }).join('');
+  const head='<thead><tr><th class="l">অবস্থা</th><th>পর্যবেক্ষণ</th><th>পরদিন (পুরো)</th><th>পরদিন (TEST)</th><th>৫ দিন (পুরো)</th><th>৫ দিন (TEST)</th></tr></thead>';
+  const rb=Object.entries(PB.robust||{}).map(([name,v])=>['বাইং হাই','সেলিং হাই'].map((lab,i)=>{ const r=v[lab]; if(!r) return '';
+    return `<tr><td class="l">${i===0?esc(name):''}</td><td class="l">${lab}</td>${cell(r.test.r1,'বাড়ে')}${cell(r.test.e5,'জেতে')}</tr>`; }).join('')).join('');
+  const PHN=['Phase A','Phase B','Phase C','Phase D','Phase E','Distribution','Markdown'];
+  let within=[], means=[];
+  const prow=PHN.map(p=>{ const v=PB.by_phase[p]; if(!v) return '';
+    const ex=['buy','neutral','sell'].map(st=>v[st]&&v[st].e5&&v[st].e5.n?v[st].e5.excess:null).filter(x=>x!=null);
+    if(ex.length>1){ within.push(Math.max(...ex)-Math.min(...ex)); } if(ex.length){ means.push(ex.reduce((a,b)=>a+b,0)/ex.length); }
+    const c=st=>{ const x=v[st]&&v[st].e5; return (!x||!x.n)?'<td class="note">–</td>':`<td class="${tc(x.t)}">${f(x.excess)}% <span class="note">(t=${f(x.t,1)}; n=${int(x.n)})</span></td>`; };
+    return `<tr><td class="l"><span class="badge" style="--c:${(PMAP[p]||{}).c||'var(--none)'}">${p}</span></td>${c('buy')}${c('neutral')}${c('sell')}</tr>`; }).join('');
+  const avgW = within.length? within.reduce((a,b)=>a+b,0)/within.length : null, spreadB = means.length? Math.max(...means)-Math.min(...means) : null;
+  const phs = (avgW!=null&&spreadB!=null) ? `একই ফেজের ভেতরে তিন অবস্থার গড় ফারাক ${f(avgW,2,false)} শতাংশ-পয়েন্ট, আর ফেজগুলোর নিজেদের মধ্যে ফারাক ${f(spreadB,2,false)} — ${spreadB>avgW*1.5?'অর্থাৎ ফেজ-লেবেল প্রেসার-অবস্থার চেয়ে অনেক বেশি পার্থক্য ধরে।':'অর্থাৎ প্রেসার-অবস্থা ফেজের সমান বা তার চেয়ে বেশি পার্থক্য ধরছে।'}` : '';
+  const H=PB.halt||{}, hrows=Object.entries(H).filter(([k,v])=>typeof v==='object').map(([k,v])=>`<tr><td class="l">${esc(k)}</td><td>${int(v.n)}</td><td>${v.rate_pct==null?'–':f(v.rate_pct,2,false)+'%'}</td></tr>`).join('');
+  const bb=PB.by_state.reach.buy.test.e5||{}, ss=PB.by_state.reach.sell.test.e5||{};
+  const lead = `<li><b>পরদিন বাড়বে কি না:</b> তিন অবস্থায় পরদিন বাড়ার হার প্রায় একই (${PB.by_state.reach.buy.all.r1.hit}% / ${PB.by_state.reach.neutral.all.r1.hit}% / ${PB.by_state.reach.sell.all.r1.hit}%)। প্রেসার স্কোর দিয়ে কালকের দিক নির্ভরযোগ্যভাবে বলা যায়নি — বড়জোর গড় রিটার্নে সামান্য ঝোঁক আছে।</li>
+    <li><b>"বাইং হাই" ধরলে:</b> TEST অর্ধে পরদিন ক্লোজে কিনে ৫ দিন ধরলে বাজার-গড়ের চেয়ে ${f(bb.excess)}% (t=${f(bb.t,1)}); "সেলিং হাই"-তে ${f(ss.excess)}% (t=${f(ss.t,1)})। |t| ≥ ২ হলে মোটামুটি টেকসই। ${bb.t<=-2?'অর্থাৎ কেনার চাপ বেশি দেখে ঢুকলে গড়ে পিছিয়ে পড়তে হয়েছে — পিছু ধাওয়ার খরচ।':''}</li>`;
+  el.innerHTML = `<details open><summary>প্রেসার ব্যাকটেস্ট (${esc(PB.first_date)} থেকে ${esc(PB.last_date)}, শুধু লিকুইড শেয়ার)</summary>
+    <p class="note">স্কোর হিসাব হয়েছে শুধু সেই দিন পর্যন্ত ডেটা দিয়ে; তারপর পরদিন ও ৫ দিনের ফল মাপা। "অতিরিক্ত" = ঐ দিনের সব লিকুইড শেয়ারের গড়ের চেয়ে কত বেশি; ৫ দিনের ফলে আসা-যাওয়া খরচ ${PB.cost_pct}% বাদ। t-মান মাসভিত্তিক ক্লাস্টার করা। TEST = ${esc(PB.split_date)}-এর পরের অর্ধ। ওজন/সীমা এই ফল দেখে বদলানো হয়নি। শুধু "নাগালের ভেতরের" শেয়ার।</p>
+    <ul class="k">${lead}</ul>
+    <div class="tw" style="max-height:none"><table>${head}<tbody>${rows('reach')}</tbody></table></div>
+    <p class="note" style="margin-top:12px"><b>সহনশীলতা-যাচাই (TEST):</b> ছোট দামের শেয়ারে টিক-সাইজের কারণে ভুয়া রিভার্সাল আসতে পারে, তাই দাম ও লেনদেন বাড়িয়ে আবার মাপা।</p>
+    <div class="tw" style="max-height:none"><table><thead><tr><th class="l">শেয়ারের ধরন</th><th class="l">অবস্থা</th><th>পরদিন</th><th>৫ দিন</th></tr></thead><tbody>${rb}</tbody></table></div>
+    <p class="note" style="margin-top:12px"><b>ওয়াইকফ ফেজের সাথে সম্পর্ক:</b> একই ফেজের ভেতরে প্রেসার-অবস্থা অনুযায়ী ৫ দিনের অতিরিক্ত রিটার্ন (পুরো ইতিহাস)। ${phs}</p>
+    <div class="tw" style="max-height:none"><table><thead><tr><th class="l">ফেজ</th><th>বাইং হাই</th><th>নিউট্রাল</th><th>সেলিং হাই</th></tr></thead><tbody>${prow}</tbody></table></div>
+    <p class="note" style="margin-top:12px"><b>হল্ট-সদৃশ (পরদিন ভলিউম ০) আগাম বোঝা যায় কি?</b> আজ ট্রেড হয়েছে এমন লিকুইড শেয়ারে পরদিন ভলিউম ০ হওয়ার হার (গড় ${H.base_rate_pct==null?'–':H.base_rate_pct}%):</p>
+    <div class="tw" style="max-height:none"><table><thead><tr><th class="l">আজকের অবস্থা</th><th>সংখ্যা</th><th>পরদিন ভলিউম ০</th></tr></thead><tbody>${hrows}</tbody></table></div>
+    <p class="note warn">এটা ভবিষ্যদ্বাণীর যন্ত্র নয়। দাম-ভলিউমের ভিত্তিতে বর্তমান চাপের অবস্থা মাপে; ব্যাকটেস্টে কালকের দিক বা হল্ট আগাম ধরার নির্ভরযোগ্য ক্ষমতা পাওয়া যায়নি।</p>
+  </details>`;
+}
+
 async function init(){
   try{
-    const [a,b]=await Promise.all([fetch('data/phases.json',{cache:'no-cache'}), fetch('data/backtest.json').catch(()=>null)]);
+    const [a,b,c]=await Promise.all([fetch('data/phases.json',{cache:'no-cache'}), fetch('data/backtest.json').catch(()=>null), fetch('data/pressure_backtest.json').catch(()=>null)]);
     DATA = await a.json();
     try{ BT = b && b.ok ? await b.json() : null; }catch(e){ BT=null; }
+    try{ PB = c && c.ok ? await c.json() : null; }catch(e){ PB=null; }
   }catch(e){ $('meta').textContent='ডেটা লোড করা যায়নি: '+e; return; }
+  if(!DATA.pconfig) tab=SETUP.k;          // বট এখনও প্রেসারসহ নতুন স্ক্যান চালায়নি: পুরনো ডেটায় পেজ যেন না ভাঙে
   const secs=[...new Set(DATA.stocks.map(s=>s.s).filter(Boolean))].sort();
   $('sector').innerHTML += secs.map(s=>`<option>${esc(s)}</option>`).join('');
   let upd='';
@@ -363,7 +485,7 @@ async function init(){
   if(!DATA.have_fund){ const w=$('fundwarn'); w.style.display='block';
     w.innerHTML = 'Paid-up মূলধন ও P/E-র তথ্য এখনও আসেনি (সাপ্তাহিক আপডেটে <code>docs/data/fundamentals.csv</code> তৈরি হয়; চাইলে <code>fundamentals_manual.csv</code> দিয়ে হাতে দিতে পারেন)। ততদিন "অপারেটর ওয়াচ" ট্যাবে শুধু STEALTH সংকেতওয়ালা শেয়ার দেখাচ্ছে, আর স্কোরে Paid-up-এর ২০ পয়েন্ট ধরা হচ্ছে না।'; }
   ['q','sector','liq'].forEach(id=>$(id).addEventListener(id==='q'?'input':'change',render));
-  renderRules(); renderBT(); render();
+  renderRules(); renderBT(); renderPB(); render();
 }
 init();
 </script>

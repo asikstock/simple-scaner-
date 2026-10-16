@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from phase_engine import Cfg, PHASES, build_panel, classify, load_all_prices, cfg_dict  # noqa: E402
+from pressure_engine import PCfg, load_prices_ycp, pressure_latest, pcfg_dict  # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA = os.path.join(ROOT, 'docs', 'data')
@@ -50,6 +51,8 @@ def main():
     have_fund = len(fund) > 0 and fund['paidup_mn'].notna().any()
     F = classify(build_panel(prices, cfg, horizons=()), cfg, fund if have_fund else None)
     last = F['date'].max()
+    pcfg = PCfg()
+    PR = pressure_latest(load_prices_ycp(ROOT), pcfg)           # বাইং/সেলিং প্রেসার (scripts/pressure_engine.py)
     sectors = {r['SYMBOL'].strip().upper(): r['SECTOR'].strip() for r in read_csv_rows(os.path.join(DATA, 'sectors.csv'))}
     cats = dict(zip(fund['code'], fund['cat'])) if have_fund else {}
     rows = []
@@ -63,7 +66,17 @@ def main():
                                 ('STEALTH', 'e_stealth')) if bool(g[c].tail(5).any())]
         lowcap = bool(r['lowcap']) if have_fund and r['paidup_mn'] == r['paidup_mn'] else None
         zone = ''.join(k for k, c in (('F', 'z_fib'), ('O', 'z_ob'), ('G', 'z_fvg')) if bool(r[c]))
+        pr = PR.loc[code] if code in PR.index and PR.loc[code, 'date'] == last else None
+        pv = (lambda k, n=0: rnd(pr[k], n) if pr is not None else None)
         rows.append({
+            'pbuy': pv('bp'), 'psell': pv('sp'), 'pscore': pv('ps'), 'pst': (pr['state'] or None) if pr is not None else None,
+            'gn': (pr['gone'] or None) if pr is not None else None,          # up / dn / None: নাগালের বাইরে কোন দিকে
+            'fw3': pv('flow3', 2), 'bal': pv('bal10', 2), 'ab': pv('abs3', 2),
+            'r3': rnd(pr['ret3'] * 100, 1) if pr is not None else None,
+            'r5': rnd(pr['ret5'] * 100, 1) if pr is not None else None,
+            'dev': rnd(pr['dev20'] * 100, 1) if pr is not None else None,
+            'idle': int(pr['idle']) if pr is not None else 0,                # টানা কত দিন ভলিউম ০ (১ = আজই নিষ্ক্রিয়)
+            'lk': ('up' if bool(pr['lock_up']) else 'dn' if bool(pr['lock_dn']) else None) if pr is not None else None,
             'c': code, 's': sectors.get(code, ''), 'p': ph, 'sc': int(r['score']) if ph else 0, 'd': int(r['days']) if ph else 0,
             'cl': rnd(r['close']), 'ch': rnd(r['chg']), 'v': int(r['volume']), 'val': rnd(r['value20'] / 1e6, 1),
             'm20': rnd(r['sma20']), 'm50': rnd(r['sma50']), 'm100': rnd(r['sma100']),
@@ -85,7 +98,7 @@ def main():
     rows.sort(key=lambda x: (order.get(x['p'], 9), -x['sc'], x['c']))
     liq = [x for x in rows if x['lq']]
     out = {'updated_utc': datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'), 'last_date': last,
-           'config': cfg_dict(cfg), 'have_fund': bool(have_fund), 'n_all': len(rows), 'n_liquid': len(liq),
+           'config': cfg_dict(cfg), 'pconfig': pcfg_dict(pcfg), 'have_fund': bool(have_fund), 'n_all': len(rows), 'n_liquid': len(liq),
            'counts_liquid': {p: sum(1 for x in liq if x['p'] == p) for p in PHASES},
            'counts_all': {p: sum(1 for x in rows if x['p'] == p) for p in PHASES},
            'n_setup_liquid': sum(1 for x in liq if x['ok']), 'stocks': rows}

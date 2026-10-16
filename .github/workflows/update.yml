@@ -49,7 +49,9 @@ jobs:
         run: pip install pandas numpy
 
       - name: টেস্ট
-        run: python tests/test_update_data.py
+        run: |
+          python tests/test_update_data.py
+          python tests/test_pressure_engine.py
         continue-on-error: true
 
       - name: আর্কাইভ যাচাই (probe)
@@ -74,6 +76,11 @@ jobs:
       - name: ব্যাকটেস্ট (শুধু চাইলে)
         if: ${{ github.event.inputs.backtest == 'true' || github.event_name == 'push' }}
         run: python -I tools/backtest.py
+        continue-on-error: true
+
+      - name: প্রেসার ব্যাকটেস্ট (শুধু চাইলে)
+        if: ${{ github.event.inputs.backtest == 'true' || github.event_name == 'push' }}
+        run: python -I tools/backtest_pressure.py
         continue-on-error: true
 
       - name: পরিবর্তন সেভ
