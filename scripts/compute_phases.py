@@ -63,7 +63,7 @@ def main():
         r = g.iloc[-1]
         ph = r['phase'] if isinstance(r['phase'], str) else None
         flags = [k for k, c in (('SC', 'e_sc'), ('SPRING', 'e_spring'), ('SOS', 'e_sos'), ('BC', 'e_bc'), ('UTAD', 'e_utad'), ('SOW', 'e_sow'),
-                                ('STEALTH', 'e_stealth')) if bool(g[c].tail(5).any())]
+                                ('STEALTH', 'e_stealth'), ('EARLY', 'e_early')) if bool(g[c].tail(5).any())]
         lowcap = bool(r['lowcap']) if have_fund and r['paidup_mn'] == r['paidup_mn'] else None
         zone = ''.join(k for k, c in (('F', 'z_fib'), ('O', 'z_ob'), ('G', 'z_fvg')) if bool(r[c]))
         pr = PR.loc[code] if code in PR.index and PR.loc[code, 'date'] == last else None
@@ -92,6 +92,7 @@ def main():
             'wl': bool(lowcap) if lowcap is not None else ('STEALTH' in flags),
             'gl': int(r['glvl']) if r['glvl'] == r['glvl'] else None, 'ga': int(r['gage']) if r['gage'] == r['gage'] else None,
             'gb': int(r['gbal']) if r['gbal'] == r['gbal'] else None,
+            'ea': bool(r['early']) if 'early' in r else False,
             'lq': bool(r['liquid']), 'sp': [rnd(x) for x in g['close'].tail(50).tolist()],
         })
     order = {p: i for i, p in enumerate(PHASES)}

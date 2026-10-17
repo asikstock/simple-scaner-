@@ -29,10 +29,10 @@ try:                                     # স্ক্রিপ্ট হিস
 except ImportError:                      # pragma: no cover
     from scripts.wyckoff_struct import wyckoff_struct
 
-PHASES = ["Phase A", "Phase B", "Phase C", "Phase D", "Phase E", "Distribution", "Markdown"]
-BULL = {"Phase A", "Phase B", "Phase C", "Phase D", "Phase E"}
-BEAR = {"Distribution", "Markdown"}
-ALLOC = {"C": 30, "D": 70, "SMC": 70}          # রিপোর্টের ক্যাপিটাল-এলোকেশন সারণি (SMC = CHOCH-পরবর্তী মিটিগেশন এন্ট্রি, Phase D-র সমতুল্য ধরা)
+PHASES = ["Phase A", "Phase B", "Phase C", "Phase D", "Phase E", "Re-accumulation", "Distribution", "Re-distribution", "Markdown"]
+BULL = {"Phase A", "Phase B", "Phase C", "Phase D", "Phase E", "Re-accumulation"}
+BEAR = {"Distribution", "Re-distribution", "Markdown"}
+ALLOC = {"C": 30, "D": 70, "SMC": 70, "REACC": 50}          # রিপোর্টের ক্যাপিটাল-এলোকেশন সারণি (REACC = ৫০% পজিশন)
 
 
 @dataclass
@@ -260,11 +260,13 @@ def base_features(df, cfg=Cfg()):
     utad = (h > f["hi_r"]) & (c <= f["hi_r"]) & (vr >= cfg.dist_vr) & up_ctx
     sow = (((vr >= 2.0) & (upper_wick >= 2 * body) & (f["close_pos"] <= 1 / 3) & up_ctx)
            | ((c < f["lo_r"]) & (vr >= cfg.dist_vr) & up_ctx & rng_ok))
+    early_dry = (f["atr_ratio"] <= cfg.squeeze_ratio) & (vr <= 0.75) & rng_ok & (c >= f["lo_r"] * 0.98) & (f["vb"] >= -0.2)
     ev = lambda s: s.fillna(False).to_numpy(dtype=bool)
-    for nm, fl_ in (("e_stealth", stealth), ("e_sc", sc), ("e_spring", spring), ("e_sos", sos), ("e_bc", bc), ("e_utad", utad), ("e_sow", sow)):
+    for nm, fl_ in (("e_stealth", stealth), ("e_early", early_dry), ("e_sc", sc), ("e_spring", spring), ("e_sos", sos), ("e_bc", bc), ("e_utad", utad), ("e_sow", sow)):
         f[nm] = ev(fl_)
     ha, la, ca = h.to_numpy(float), l.to_numpy(float), c.to_numpy(float)
     f["stealth_age"] = _age(ev(stealth))
+    f["early_age"] = _age(ev(early_dry))
     f["sc_age"] = _age(ev(sc))
     f["sc_low"] = _val_at_last(ev(sc), la, cfg.sc_win)
     f["spr_age"] = _age(ev(spring))
@@ -305,6 +307,7 @@ def classify(F, cfg=Cfg(), fund=None):
     dn_trend = (c < F["sma20"]) & (F["sma20"] < F["sma50"]) & (F["slope"] < 0)
     rng_ok = F["width_r"] <= cfg.max_width
     in_rng = (c >= F["lo_r"] * 0.98) & (c <= F["hi_r"])
+    mid_r = (F["hi_r"] + F["lo_r"]) / 2
 
     is_dist = (F["dist_age"] <= cfg.dist_win) & (c <= F["dist_hi"])
     is_E = (F["sos_age"] <= cfg.e_win) & (c > F["sos_lvl"] * (1 + cfg.e_ext)) & up_trend
@@ -312,8 +315,18 @@ def classify(F, cfg=Cfg(), fund=None):
     is_C = (F["spr_age"] <= cfg.spring_win) & (c > F["spr_lvl"])
     is_B = rng_ok & in_rng & F["down_ctx"] & (F["atr_ratio"] <= cfg.squeeze_ratio) & (F["vdry"] <= 1.0)
     is_A = (F["sc_age"] <= cfg.sc_win) & (c > F["sc_low"])
-    conds = [ok & dn_trend, ok & is_dist, ok & is_E, ok & is_D, ok & is_C, ok & is_B, ok & is_A]
-    names = ["Markdown", "Distribution", "Phase E", "Phase D", "Phase C", "Phase B", "Phase A"]
+
+    # Re-accumulation: Uptrend context, range consolidation, volume drying up / absorption
+    reacc_ctx = F["up_ctx"] | (c > F["sma50"]) | (F["slope"] > -0.02)
+    is_reacc = rng_ok & in_rng & reacc_ctx & (F["atr_ratio"] <= cfg.squeeze_ratio) & (F["vdry"] <= 1.15) & (F["vb"] >= -0.15)
+
+    # Re-distribution: Downtrend context, range pause, weak demand / persistent selling
+    redist_ctx = F["down_ctx"] | (c < F["sma50"]) | (F["slope"] < -0.02)
+    is_redist = rng_ok & in_rng & redist_ctx & (F["vb"] <= 0.10) & (F["close_pos"] <= 0.55)
+
+    # Priority order: specific setups and accumulation phases FIRST, markdown last
+    conds = [ok & is_dist, ok & is_E, ok & is_D, ok & is_C, ok & is_reacc, ok & is_B, ok & is_A, ok & is_redist, ok & dn_trend]
+    names = ["Distribution", "Phase E", "Phase D", "Phase C", "Re-accumulation", "Phase B", "Phase A", "Re-distribution", "Markdown"]
     ph = pd.Series(np.select(conds, names, default=""), index=F.index).replace("", None)
     F["phase"] = ph
 
@@ -338,20 +351,29 @@ def classify(F, cfg=Cfg(), fund=None):
     stD = pd.Series(np.where(ob_good, F["ob_lo"] * (1 - buf), F["sos_lvl"] * 0.97), index=F.index)
     tgD = F["h120"]
     stS, tgS = lo * (1 - buf), pd.concat([F["h120"], hi], axis=1).max(axis=1)
+
+    # Re-accumulation LPS setup: price in lower half of range or retesting support on dry volume
+    stR = F["lo_r"] * (1 - buf)
+    tgR = F["hi_r"] * 1.15
+    rR = rrr(tgR, stR)
+    reacc_lps = (ph == "Re-accumulation") & (F["low"] <= mid_r * 1.05) & (F["vr"] < 1.0) & (F["chg"] < cfg.uc_pct)
+    vR = reacc_lps & (rR >= cfg.rrr_min)
+
     rC, rD, rS = rrr(tgC, stC), rrr(tgD, stD), rrr(tgS, stS)
     lps = (ph == "Phase D") & (F["low"] <= F["sos_lvl"] * 1.03) & (F["vr"] < 1.0) & (F["sos_age"] >= 1) & (F["chg"] < cfg.uc_pct)
     vD = lps & (rD >= cfg.rrr_min)
     vS = smc_entry & (rS >= cfg.rrr_min)
     vC = (ph == "Phase C") & (rC >= cfg.rrr_min)
-    kind = np.select([vD, vS, vC, ph == "Phase C", ph == "Phase D", F["leg_ok"]], ["D", "SMC", "C", "C", "D", "SMC"], default="")
+    kind = np.select([vD, vS, vC, vR, ph == "Phase C", ph == "Phase D", ph == "Re-accumulation", F["leg_ok"]],
+                     ["D", "SMC", "C", "REACC", "C", "D", "REACC", "SMC"], default="")
     F["plan"] = kind
-    F["stop"] = np.select([kind == "D", kind == "SMC", kind == "C"], [stD, stS, stC], default=np.nan)
-    F["target"] = np.select([kind == "D", kind == "SMC", kind == "C"], [tgD, tgS, tgC], default=np.nan)
-    F["rrr"] = np.select([kind == "D", kind == "SMC", kind == "C"], [rD, rS, rC], default=np.nan)
-    bear_ph = ph.isin(list(BEAR))                                               # Distribution/Markdown-এ নতুন এন্ট্রি নয়
-    vD, vS, vC = vD & ~bear_ph, vS & ~bear_ph, vC & ~bear_ph
-    F["setup"] = vD | vS | vC
-    stype = np.select([vD, vS, vC], ["D", "SMC", "C"], default="")
+    F["stop"] = np.select([kind == "D", kind == "SMC", kind == "C", kind == "REACC"], [stD, stS, stC, stR], default=np.nan)
+    F["target"] = np.select([kind == "D", kind == "SMC", kind == "C", kind == "REACC"], [tgD, tgS, tgC, tgR], default=np.nan)
+    F["rrr"] = np.select([kind == "D", kind == "SMC", kind == "C", kind == "REACC"], [rD, rS, rC, rR], default=np.nan)
+    bear_ph = ph.isin(list(BEAR))                                               # Distribution/Re-distribution/Markdown-এ নতুন এন্ট্রি নয়
+    vD, vS, vC, vR = vD & ~bear_ph, vS & ~bear_ph, vC & ~bear_ph, vR & ~bear_ph
+    F["setup"] = vD | vS | vC | vR
+    stype = np.select([vD, vS, vC, vR], ["D", "SMC", "C", "REACC"], default="")
     F["setup_type"] = stype
     F["alloc"] = np.where(F["setup"], pd.Series(stype).map(ALLOC).fillna(0).to_numpy(), 0)
     F.loc[ph == "Phase E", "alloc"] = 100                                       # চলমান পজিশন হোল্ড (নতুন এন্ট্রি নয়)
@@ -360,11 +382,12 @@ def classify(F, cfg=Cfg(), fund=None):
 
     # --- করণীয় (কী) কোড; বাংলা লেখা পেজে
     F["act"] = np.select(
-        [ph == "Markdown", ph == "Distribution", (ph == "Phase E") & late, ph == "Phase E",
-         vD, ph == "Phase D", lps, vC, ph == "Phase C", ph == "Phase B", ph == "Phase A", vS],
-        ["avoid", "exit", "e_late", "e_hold", "d_full", "d_wait", "d_rrr", "c_scale", "c_wait", "b_watch", "a_obs", "smc_in"], default="")
-    # d_wait/d_rrr ক্রম: lps থাকলে (কিন্তু RRR<৩) d_rrr, না থাকলে d_wait — np.select প্রথম মিল নেয় বলে ঠিক ক্রমে আছে
+        [ph == "Markdown", ph == "Re-distribution", ph == "Distribution", (ph == "Phase E") & late, ph == "Phase E",
+         vD, ph == "Phase D", lps, vC, ph == "Phase C", vR, ph == "Re-accumulation", reacc_lps, ph == "Phase B", ph == "Phase A", vS],
+        ["avoid", "redist_avoid", "exit", "e_late", "e_hold", "d_full", "d_wait", "d_rrr", "c_scale", "c_wait", "reacc_in", "reacc_wait", "reacc_rrr", "b_watch", "a_obs", "smc_in"], default="")
+    # d_wait/d_rrr ক্রম: lps থাকলে (কিন্তু RRR<৩) d_rrr, না থাকলে d_wait
     F.loc[(F["act"] == "d_wait") & lps, "act"] = "d_rrr"
+    F.loc[(F["act"] == "reacc_wait") & reacc_lps, "act"] = "reacc_rrr"
 
     # --- স্কোর (০–১০০)
     vrs = np.clip(F["vr5"] / cfg.vr_thr, 0, 1) * 25
@@ -375,11 +398,11 @@ def classify(F, cfg=Cfg(), fund=None):
     bear_s = (np.clip(-F["vb"], 0, 0.5) / 0.5 * 30 + vrs + ma_bear + (F["trend"] == -1) * 15 + F["lowcap"] * 15).fillna(0)
     F["score"] = np.where(ph.isin(list(BULL)), bull_s, np.where(ph.isin(list(BEAR)), bear_s, 0)).round().clip(0, 100)
     F["stealth"] = F["stealth_age"] <= cfg.stealth_win
+    F["early"] = F["early_age"] <= 5
 
-    # --- গঠন-স্তর: ফেজের পাশ অনুযায়ী (Phase A–E → অ্যাকিউমুলেশন-গঠন; Distribution → ডিস্ট্রিবিউশন-গঠন; Markdown/ফেজহীন → নেই)।
-    # ০ = গঠন নেই/বাতিল, ১ = SC/BC + AR, ২ = SC/BC + AR + ST (নিশ্চিত)। ফেজ-লেবেল বা স্কোর এতে বদলায় না।
+    # --- গঠন-স্তর: ফেজের পাশ অনুযায়ী
     is_acc = ph.isin(list(BULL))
-    is_dist_ph = ph == "Distribution"
+    is_dist_ph = ph.isin(["Distribution", "Re-distribution"])
     F["glvl"] = np.where(is_acc, F["gacc_lvl"], np.where(is_dist_ph, F["gdist_lvl"], np.nan))
     F["gage"] = np.where(is_acc, F["gacc_age"], np.where(is_dist_ph, F["gdist_age"], np.nan))
     F["gbal"] = np.where(is_acc, F["gacc_dem"], np.where(is_dist_ph, F["gdist_sup"], np.nan))
