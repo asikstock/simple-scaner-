@@ -581,17 +581,29 @@
       font-weight: 400;
       display: block;
     }
+    .sym-tags {
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      margin-bottom: 2px;
+      line-height: 1;
+    }
     .badge-tag {
-      font-size: 9.5px;
-      font-weight: 600;
+      font-size: 8.5px;
+      font-weight: 700;
       padding: 1px 4px;
-      border-radius: 4px;
+      border-radius: 3px;
       display: inline-block;
       vertical-align: middle;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
     }
-    .tag-lc { background: #fef3c7; color: #b45309; }
-    .tag-stealth { background: #e0e7ff; color: #4338ca; }
-    .tag-z { background: #fee2e2; color: #b91c1c; }
+    .tag-lc { background: #fef3c7; color: #b45309; border: 1px solid #fde68a; }
+    .tag-stealth { background: #e0e7ff; color: #4338ca; border: 1px solid #c7d2fe; }
+    .tag-z { background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; }
+    :root[data-theme="dark"] .tag-lc { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
+    :root[data-theme="dark"] .tag-stealth { background: rgba(99, 102, 241, 0.18); color: #a5b4fc; border: 1px solid rgba(99, 102, 241, 0.35); }
+    :root[data-theme="dark"] .tag-z { background: rgba(239, 68, 68, 0.18); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.3); }
 
     .price-chg {
       display: inline-flex;
@@ -1073,6 +1085,20 @@ const TABS_CONFIG = [
     filter: s => (s.p === 'Phase C' || s.p === 'Phase D') && s.pst === 'buy' && !s.gn
   },
   {
+    k: '__booming',
+    label: '🚀 বুমিং অপারেটর স্টিলথ',
+    title: 'বুমিং লো-ক্যাপ স্টিলথ (Booming Low-Cap Stealth)',
+    desc: 'যেকোনো ক্যাটাগরির স্বল্প-মূলধনী (LC), গোপন সংগ্রহ (Stealth), পজিটিভ ভলিউম (VR+), কোনো নেগেটিভ ফেজ নেই এবং স্পষ্ট বাইং প্রেসার ডমিনেন্স।',
+    filter: s => {
+      const isLC = Boolean(s.lc || (s.pu !== null && s.pu <= 50));
+      const isStealth = Boolean(s.wl || (s.fl && s.fl.some(f => f.includes('STEALTH') || f.includes('SC'))));
+      const notNegative = s.p !== 'Distribution' && s.p !== 'Markdown' && s.p !== 'Phase A';
+      const hasBuy = (s.pbuy || 0) >= (s.psell || 0) && (s.pbuy || 0) >= 20;
+      const vrPlus = (s.vr != null && s.vr >= 0.5) || (s.vr5 != null && s.vr5 >= 1.0);
+      return isLC && isStealth && notNegative && hasBuy && vrPlus && !s.gn && (s.idle === 0 || !s.idle) && !s.lk;
+    }
+  },
+  {
     k: '__setup',
     label: 'এন্ট্রি-যোগ্য সেটআপ',
     title: 'এন্ট্রি-যোগ্য সেটআপ (Entry Setups RRR ≥ 1:2 & Buyer Dominance)',
@@ -1428,12 +1454,17 @@ function renderTable() {
     // Sparkline color
     const spColor = chgVal >= 0 ? '#16a34a' : '#dc2626';
 
+    const isStealth = Boolean(s.wl || (s.fl && s.fl.includes('STEALTH')));
+    const isLC = Boolean(s.lc || (s.pu != null && s.pu <= 50));
+    const stealthBadge = isStealth ? '<span class="badge-tag tag-stealth">stealth</span>' : '';
+    const lcBadge = isLC ? '<span class="badge-tag tag-lc">LC</span>' : '';
+    const tagsRow = (isStealth || isLC) ? `<div class="sym-tags">${stealthBadge}${lcBadge}</div>` : '';
+
     return `<tr>
       <td class="td-sym">
+        ${tagsRow}
         <span class="sym-code" onclick="openModernChart('${esc(s.c)}')">
           ${esc(s.c)}
-          ${s.lc ? '<span class="badge-tag tag-lc">LC</span>' : ''}
-          ${(s.fl && s.fl.includes('STEALTH')) ? '<span class="badge-tag tag-stealth">STEALTH</span>' : ''}
           ${s.cat === 'Z' ? '<span class="badge-tag tag-z">Z</span>' : ''}
         </span>
         <span class="sym-sector">${esc(s.s || 'Other')}</span>
