@@ -873,6 +873,9 @@
       <button class="btn btn-icon-only" id="btnRefresh" title="রিফ্রেশ">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
       </button>
+      <button class="btn" id="btnPlaybook" style="background:linear-gradient(135deg, #d97706, #dc2626);color:#ffffff;border:none;font-weight:700">
+        🔥 ডেভিল'স প্লেবুক
+      </button>
       <button class="btn" id="btnRules">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
         নিয়ম ও ব্যাকটেস্ট
@@ -1040,6 +1043,23 @@
   </div>
 </div>
 
+<!-- Devil's Playbook Drawer -->
+<div class="drawer-overlay" id="playbookDrawer">
+  <div class="drawer-panel" style="max-width:860px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;border-bottom:1px solid var(--line);padding-bottom:12px">
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="font-size:26px">🔥</span>
+        <div>
+          <h2 style="margin:0;font-size:18px;color:var(--ink)">Go with the Devil: অপারেটর কো-রাইডিং মাস্টারক্লাস</h2>
+          <span style="font-size:11px;color:var(--muted)">হাই-রিস্ক হাই-গেইন ট্রেডিং ও ক্যাপিটাল রক্ষার চূড়ান্ত গাইডলাইন</span>
+        </div>
+      </div>
+      <button class="btn btn-icon-only" id="btnClosePlaybook">✕</button>
+    </div>
+    <div id="playbookContent"></div>
+  </div>
+</div>
+
 <!-- Rules & Backtest Drawer -->
 <div class="drawer-overlay" id="rulesDrawer">
   <div class="drawer-panel">
@@ -1096,6 +1116,42 @@ const TABS_CONFIG = [
       const hasBuy = (s.pbuy || 0) >= (s.psell || 0) && (s.pbuy || 0) >= 20;
       const vrPlus = (s.vr != null && s.vr >= 0.5) || (s.vr5 != null && s.vr5 >= 1.0);
       return isLC && isStealth && notNegative && hasBuy && vrPlus && !s.gn && (s.idle === 0 || !s.idle) && !s.lk;
+    }
+  },
+  {
+    k: '__syndicate',
+    label: '⚡ সিন্ডিকেট শিকারি',
+    title: "⚡ সিন্ডিকেট শিকারি (Devil's Pick - Pre-Blast Low-Cap)",
+    desc: '⚡ হাই-রিস্ক হাই-গেইন শিকারি সেটআপ: স্বল্প মূলধনী (Paid-up < ৫০ কোটি) ও লো ফ্রি-ফ্লোট শেয়ার, যেখানে দীর্ঘ ভলিউম ড্রাই-আপের পর স্মার্ট মানির প্রথম নীরব একুমুলেশন সম্পন্ন হয়েছে। সাধারণ পাবলিক ঢোকার আগেই এন্ট্রি নিন।',
+    filter: s => {
+      const isLC = Boolean(s.lc || (s.pu !== null && s.pu <= 50));
+      const isStealth = Boolean(s.wl || (s.fl && s.fl.some(f => f.includes('STEALTH') || f.includes('SC') || f.includes('SPRING'))) || s.p === 'Phase B' || s.p === 'Phase C' || s.p === 'Phase D');
+      const vrFootprint = (s.vr != null && s.vr >= 0.7) || (s.vr5 != null && s.vr5 >= 1.3) || (s.ab >= 1.1);
+      const notExtended = !s.gn && (!s.dev || s.dev < 22) && ((s.r5 || 0) < 16);
+      const hasBuy = (s.pbuy || 0) >= (s.psell || 0) && (s.pbuy || 0) >= 20;
+      const notNegative = s.p !== 'Distribution' && s.p !== 'Markdown';
+      return isLC && isStealth && vrFootprint && notExtended && hasBuy && notNegative && (s.idle === 0 || !s.idle) && !s.lk;
+    }
+  },
+  {
+    k: '__sympathy',
+    label: '🐎 সিম্প্যাথি রানার',
+    title: '🐎 সেক্টর লিডার ও ২য়-৩য় ঘোড়া (Sympathy Play Engine)',
+    desc: '🐎 হট সেক্টর রোটেশন ইঞ্জিন: প্রতিটি সক্রিয় সেক্টরের অগ্রগামী লিডার (যেটি আপার সার্কিটে বা চড়া দামে) এবং তার পাশাপাশি দৌড়ের অপেক্ষায় থাকা একই সেক্টরের স্বল্প-মূলধনী ২য় ও ৩য় সারির রানার ঘোড়া।',
+    filter: s => !s.gn && (s.idle === 0 || !s.idle) && !s.lk
+  },
+  {
+    k: '__climax_dump',
+    label: '🚨 ডাম্প সতর্কতা',
+    title: '🚨 অপারেটর ডাম্প সতর্কতা (Climax Dump & Distribution Alert)',
+    desc: '🚨 মার্কেট ডিস্ট্রিবিউশন ও ট্র্যাপ ডিটেক্টর: যেসব স্টকে অপারেটররা চড়া দামে রিটেইলদের ফাঁদে ফেলে প্রফিট তুলে কেটে পড়ছে (Buying Climax, UTAD, সেলিং প্রেসার ও ভলিউম ড্রাই ডাইভারজেন্স)। জরুরি এক্সিট জোন।',
+    filter: s => {
+      const isDist = s.p === 'Distribution';
+      const hasTrap = Boolean(s.fl && s.fl.some(f => f.includes('UTAD') || f.includes('BC') || f.includes('SOW')));
+      const isOverextendedSell = Boolean((s.dev && s.dev >= 16) && (s.pst === 'sell' || (s.psell && s.psell >= 55)));
+      const isLateDump = Boolean(s.late && (s.pst === 'sell' || (s.ch < -2 && (s.vr || 0) > 1.3)));
+      const isClimaxReversal = Boolean(s.gn === 'buy' && (s.psell > s.pbuy || s.ch < 0));
+      return isDist || hasTrap || isOverextendedSell || isLateDump || isClimaxReversal;
     }
   },
   {
@@ -1388,7 +1444,13 @@ function renderTable() {
 
   $('tblCount').textContent = `দেখানো হচ্ছে: ${list.length} / ${totalTabCount} টি স্টক`;
   const thPlan = document.querySelector('#scanTable thead th:nth-child(5)');
-  if (thPlan) thPlan.textContent = (currentTab === '__booming') ? '🚀 বুমিং ট্রেড প্ল্যান ও ডিসিশন একশন' : 'ট্রেড প্ল্যান ও অ্যাকশন';
+  if (thPlan) {
+    if (currentTab === '__booming') thPlan.textContent = '🚀 বুমিং ট্রেড প্ল্যান ও ডিসিশন একশন';
+    else if (currentTab === '__syndicate') thPlan.textContent = '⚡ সিন্ডিকেট ট্রেড প্ল্যান (Pre-Blast)';
+    else if (currentTab === '__climax_dump') thPlan.textContent = '🚨 ডাম্প সতর্কতা ও জরুরি এক্সিট';
+    else if (currentTab === '__sympathy') thPlan.textContent = '🐎 সেক্টর সিম্প্যাথি ভূমিকা';
+    else thPlan.textContent = 'ট্রেড প্ল্যান ও অ্যাকশন';
+  }
 
   // Sort
   list.sort((a, b) => {
@@ -1476,6 +1538,46 @@ function renderTable() {
             <div style="display:flex;justify-content:space-between"><span>স্টপ-লস (SL):</span><b style="color:var(--down)">${slText}</b></div>
             <div style="display:flex;justify-content:space-between"><span>টার্গেট (TP):</span><b style="color:var(--up)">${tpText}</b></div>
           </div>
+        </div>
+      `;
+    } else if (currentTab === '__syndicate') {
+      const cl = s.cl || 0;
+      const m20 = s.m20 || (cl * 0.95);
+      const hi = s.hi || (cl * 1.05);
+      const entryZone = '৳' + (cl * 0.985).toFixed(1) + ' – ৳' + cl.toFixed(1);
+      const slText = '৳' + (cl * 0.97).toFixed(1) + ' (-৩.০%)';
+      const tp1 = '৳' + (cl * 1.15).toFixed(1) + ' (+১৫%)';
+      const tp2 = '৳' + (cl * 1.28).toFixed(1) + ' (+২৮%)';
+      planContent = `
+        <div style="display:flex;flex-direction:column;gap:3px;max-width:320px;text-align:left">
+          <div><span class="badge-tag" style="background:#fef3c7;color:#92400e;border:1px solid #f59e0b;font-weight:700">⚡ প্রি-ব্লাস্ট স্টেলথ একুমুলেশন</span></div>
+          <div style="font-size:11px;color:var(--text);line-height:1.3">লো-ক্যাপ শেয়ারে স্মার্ট মানির নীরব পজিশন। পাবলিক বোঝার আগেই এন্ট্রি নিন।</div>
+          <div style="background:rgba(217,119,6,0.06);border:1px solid #f59e0b;border-radius:6px;padding:4px 6px;font-family:var(--font-mono);font-size:10px;line-height:1.4">
+            <div style="display:flex;justify-content:space-between"><span>নীরব এন্ট্রি:</span><b style="color:#d97706">${entryZone}</b></div>
+            <div style="display:flex;justify-content:space-between"><span>টাইট স্টপ-লস:</span><b style="color:var(--down)">${slText}</b></div>
+            <div style="display:flex;justify-content:space-between"><span>টার্গেট (TP১ / TP২):</span><b style="color:var(--up)">${tp1} | ${tp2}</b></div>
+          </div>
+        </div>
+      `;
+    } else if (currentTab === '__climax_dump') {
+      planContent = `
+        <div style="display:flex;flex-direction:column;gap:3px;max-width:320px;text-align:left">
+          <div><span class="badge-tag" style="background:#fee2e2;color:#991b1b;border:1px solid #f87171;font-weight:700">🚨 চরম বিপদ: ডাম্প ও এক্সিট</span></div>
+          <div style="font-size:11px;color:#991b1b;line-height:1.3;font-weight:600">অপারেটররা মাল ছেড়ে পালাচ্ছে বা পিকের পর ডিস্ট্রিবিউশন চলছে। অবিলম্বে এক্সিট করুন।</div>
+          <div style="background:#fef2f2;border:1px solid #fca5a5;border-radius:6px;padding:4px 6px;font-family:var(--font-mono);font-size:10px;line-height:1.4">
+            <div style="display:flex;justify-content:space-between"><span>পরামর্শ:</span><b style="color:#dc2626">নতুন বাই পুরোপুরি নিষিদ্ধ</b></div>
+            <div style="display:flex;justify-content:space-between"><span>একশন:</span><b style="color:#dc2626">মার্কেট অর্ডারে প্রফিট লক / সেল</b></div>
+          </div>
+        </div>
+      `;
+    } else if (currentTab === '__sympathy') {
+      const isLeader = (s.ch || 0) >= 3.5 || (s.vr || 0) >= 2.0;
+      planContent = `
+        <div style="display:flex;flex-direction:column;gap:3px;max-width:320px;text-align:left">
+          <div>${isLeader 
+            ? '<span class="badge-tag" style="background:#fef3c7;color:#92400e;border:1px solid #f59e0b;font-weight:700">👑 সেক্টর পেস-সেটার (লিডার)</span>' 
+            : '<span class="badge-tag" style="background:#dbeafe;color:#1e40af;border:1px solid #60a5fa;font-weight:700">🐎 সিম্প্যাথি রানার (২য়/৩য় ঘোড়া)</span>'}</div>
+          <div style="font-size:11px;color:var(--text);line-height:1.3">${isLeader ? 'সেক্টরের মূল চালিকাশক্তি। লিডার দৌড়ালে রানার ফলো করবে।' : 'লিডারের গতি দেখে এই স্বল্পমূলধনী রানার স্টকে দ্রুত জাম্প করুন।'}</div>
         </div>
       `;
     } else {
@@ -1762,6 +1864,101 @@ function renderCandlestickChart(symbol, days) {
 
   svg += `</svg>`;
   container.innerHTML = svg;
+}
+
+// Devil's Playbook Drawer
+const btnPlaybook = $('btnPlaybook');
+if (btnPlaybook) {
+  btnPlaybook.addEventListener('click', () => {
+    $('playbookDrawer').classList.add('open');
+    renderPlaybookContent();
+  });
+}
+const btnClosePlaybook = $('btnClosePlaybook');
+if (btnClosePlaybook) {
+  btnClosePlaybook.addEventListener('click', () => {
+    $('playbookDrawer').classList.remove('open');
+  });
+}
+const playbookDrawer = $('playbookDrawer');
+if (playbookDrawer) {
+  playbookDrawer.addEventListener('click', (e) => {
+    if (e.target === playbookDrawer) playbookDrawer.classList.remove('open');
+  });
+}
+
+function renderPlaybookContent() {
+  const content = $('playbookContent');
+  if (!content) return;
+  content.innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:18px;font-size:13.5px;color:var(--ink);line-height:1.6">
+      <div style="background:linear-gradient(135deg, rgba(217,119,6,0.1), rgba(220,38,38,0.1));border:1px solid #f59e0b;padding:14px;border-radius:10px">
+        <h4 style="margin:0 0 6px 0;color:#d97706;font-size:15px;display:flex;align-items:center;gap:6px">
+          <span>🔥</span> মূল মূলনীতি: Go with the Devil
+        </h4>
+        <p style="margin:0;font-size:12.5px;color:var(--text)">
+          অপারেটর বা স্মার্ট মানি কোনো শেয়ার তোলার আগে দীর্ঘদিন ধরে ভলিউম ড্রাই-আপ করে নিঃশব্দে একুমুলেট করে। সাধারণ মানুষ যখন খবর পেয়ে বা সোশ্যাল মিডিয়ায় টিপস পেয়ে হাই প্রাইসে ঢুকে, অপারেটর তখন ডাম্প করে প্রফিট তুলে বেরিয়ে যায়। দশজন সাধারণ ট্রেডারের চেয়ে বেশি প্রফিট করতে হলে আপনাকে অপারেটরের সাথে নিঃশব্দে ঢুকতে হবে এবং সবার আগে বের হতে হবে।
+        </p>
+      </div>
+
+      <div style="border:1px solid var(--line);border-radius:8px;padding:14px">
+        <h4 style="margin:0 0 8px 0;color:var(--ink);font-size:14px;display:flex;align-items:center;gap:8px">
+          <span style="background:#fef3c7;color:#d97706;padding:2px 8px;border-radius:6px;font-weight:700">১</span>
+          ⚡ সিন্ডিকেট শিকারি (Pre-Blast Low-Cap Accumulation)
+        </h4>
+        <ul style="margin:0;padding-left:20px;font-size:13px;color:var(--text);display:flex;flex-direction:column;gap:4px">
+          <li><b>লো-ক্যাপ শেয়ার নির্বাচন:</b> Paid-up মূলধন ৫০ কোটির নিচে এবং লো ফ্রি-ফ্লোট শেয়ার অপারেটরদের প্রথম পছন্দ, কারণ খুব অল্প পুঁজিতে এগুলো আপার সার্কিটে হল্ট করানো যায়।</li>
+          <li><b>ভলিউম ড্রাই-আপ ও স্টেলথ ফুটপ্রিন্ট:</b> যখন বেশ কিছুদিন ধরে ভলিউম একেবারেই তলানিতে থাকে এবং প্রাইস খুব সরু রেঞ্জে থাকে, তখনই ওয়াইকফ Phase B/C স্প্রিং তৈরি হয়।</li>
+          <li><b>এন্ট্রি নিয়ম:</b> সাধারণ রিটেইল ট্রেডাররা যখন কোনো শেয়ার নিয়ে কথা বলে না, ঠিক তখনই ২০ EMA-র কাছাকাছি নিঃশব্দে এন্ট্রি নিন।</li>
+        </ul>
+      </div>
+
+      <div style="border:1px solid var(--line);border-radius:8px;padding:14px">
+        <h4 style="margin:0 0 8px 0;color:var(--ink);font-size:14px;display:flex;align-items:center;gap:8px">
+          <span style="background:#dbeafe;color:#1e40af;padding:2px 8px;border-radius:6px;font-weight:700">২</span>
+          🐎 সিম্প্যাথি রানার স্ট্র্যাটেজি (Hot Sector Follow-Through)
+        </h4>
+        <ul style="margin:0;padding-left:20px;font-size:13px;color:var(--text);display:flex;flex-direction:column;gap:4px">
+          <li><b>সেক্টর পেস-সেটার শনাক্তকরণ:</b> যখন কোনো সেক্টরের লিডার শেয়ার একাধারে ২-৩ দিন আপার সার্কিটে হল্ট হয়, তখন বাজারে ঐ সেক্টরের প্রতি তীব্র আগ্রহ তৈরি হয়।</li>
+          <li><b>২য় ও ৩য় ঘোড়ায় জাম্প:</b> সাধারণ রিটেইলাররা লিডার শেয়ার কিনতে ব্যর্থ হয়ে হতাশ হয়। ঠিক ঐ মুহূর্তেই স্মার্ট মানি একই সেক্টরের স্বল্পমূলধনী ২য় বা ৩য় শেয়ারগুলো টান দেয়।</li>
+          <li><b>তাৎক্ষণিক এন্ট্রি:</b> সিম্প্যাথি রানার স্টকে দ্রুত জাম্প করুন এবং লিডারের গতি বজায় থাকা পর্যন্ত রাইড করুন।</li>
+        </ul>
+      </div>
+
+      <div style="border:1px solid var(--line);border-radius:8px;padding:14px">
+        <h4 style="margin:0 0 8px 0;color:#dc2626;font-size:14px;display:flex;align-items:center;gap:8px">
+          <span style="background:#fee2e2;color:#dc2626;padding:2px 8px;border-radius:6px;font-weight:700">৩</span>
+          🚨 অপারেটর ডাম্প এস্কেপ (Climax Dump & Distribution Warning)
+        </h4>
+        <ul style="margin:0;padding-left:20px;font-size:13px;color:var(--text);display:flex;flex-direction:column;gap:4px">
+          <li><b>Buying Climax (BC) ও UTAD:</b> যখন সোশ্যাল মিডিয়ায় চারদিকে শেয়ারটি নিয়ে হৈচৈ পড়ে যায় এবং চড়া দামে অস্বাভাবিক বড় ভলিউম হয় কিন্তু প্রাইস ওপরে ধরে রাখতে পারে না, তখন বুঝবেন ডিস্ট্রিবিউশন চলছে।</li>
+          <li><b>ভলিউম এক্সহশন ডাইভারজেন্স:</b> নতুন হাই প্রাইসে উঠলেও যদি ভলিউম কমে যায় এবং ২০ EMA থেকে প্রাইস ১৫-২০% এর বেশি দূরে চলে যায়, তখন অবিলম্বে ৫০-১০০% প্রফিট লক করুন।</li>
+          <li><b>মার্কেট অর্ডারে এক্সিট:</b> কখনো লোভ করে বসে থাকবেন না; অপারেটর একবার ডাম্প শুরু করলে শেয়ার লোয়ার সার্কিটে লক হয়ে যাবে।</li>
+        </ul>
+      </div>
+
+      <div style="border:1px solid var(--line);border-radius:8px;padding:14px">
+        <h4 style="margin:0 0 8px 0;color:var(--ink);font-size:14px;display:flex;align-items:center;gap:8px">
+          <span style="background:#dcfce7;color:#166534;padding:2px 8px;border-radius:6px;font-weight:700">৪</span>
+          💰 ৩-ধাপ ক্যাপিটাল বরাদ্দ ও ২০-৩০% প্রফিট ট্রেইলিং ব্লুপ্রিন্ট
+        </h4>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:10px;margin-top:8px">
+          <div style="background:var(--head);padding:10px;border-radius:6px">
+            <b style="color:var(--accent)">১. টেস্ট পজিশন (৩০%)</b>
+            <p style="margin:4px 0 0 0;font-size:12px;color:var(--muted)">Phase C স্প্রিং বা বেস লেভেলে মাত্র ৩০% পুঁজিতে টেস্ট এন্ট্রি নিন।</p>
+          </div>
+          <div style="background:var(--head);padding:10px;border-radius:6px">
+            <b style="color:var(--up)">২. কনফার্মেশন এডিশন (৫০%)</b>
+            <p style="margin:4px 0 0 0;font-size:12px;color:var(--muted)">যখন ভলিউম সহকারে LPS ব্রেকআউট কনফার্ম হয়, তখন বাকি ৫০% যুক্ত করুন।</p>
+          </div>
+          <div style="background:var(--head);padding:10px;border-radius:6px">
+            <b style="color:var(--warn)">৩. বাফার ও প্রফিট লক (২০%)</b>
+            <p style="margin:4px 0 0 0;font-size:12px;color:var(--muted)">+১৫-২০% লাভে অর্ধেক ক্যাশ করুন, বাকি অর্ধেক Trailing Stop Loss দিয়ে ধরে রাখুন।</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
 }
 
 // Rules Drawer
