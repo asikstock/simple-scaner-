@@ -900,6 +900,20 @@
     .sympathy-sub-box:hover {
       background: var(--line-subtle);
     }
+
+    /* Automation Highlighting */
+    .auto-entry-highlight {
+      background: rgba(34, 197, 94, 0.15) !important;
+      border: 2px solid #22c55e !important;
+    }
+    .flash-alert {
+      animation: flash 1s infinite;
+    }
+    @keyframes flash {
+      0% { opacity: 1; }
+      50% { opacity: 0.5; }
+      100% { opacity: 1; }
+    }
   </style>
 </head>
 <body>
@@ -1549,8 +1563,18 @@ function renderTable() {
     else thPlan.textContent = 'ট্রেড প্ল্যান ও অ্যাকশন';
   }
 
-  // Sort
+  // Sort by Hotness Score or Manual Column
   list.sort((a, b) => {
+    // Calculate Smart Hotness Score: (Buy Pressure) + (Retest Proximity) + (Volume Factor)
+    const getHotness = (s) => {
+      const pscore = s.pscore || 50;
+      const isRetestZone = (s.cl >= (s.m20 || 0) * 0.98 && s.cl <= (s.m20 || 0) * 1.05) ? 30 : 0;
+      const volumeFactor = (s.vr || 1) * 10;
+      return pscore + isRetestZone + volumeFactor;
+    };
+    
+    if (sortCol === 'hotness') return getHotness(b) - getHotness(a);
+
     let va = a[sortCol];
     let vb = b[sortCol];
     if (va == null) va = sortAsc ? 999999 : -999999;
