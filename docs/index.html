@@ -1347,13 +1347,31 @@ function $(id) { return document.getElementById(id); }
 function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
 // Live Clock
+let autoSyncSec = 30;
 function updateClock() {
   const d = new Date();
   const timeStr = d.toLocaleTimeString('en-US', { timeZone: 'Asia/Dhaka', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
   const el = $('liveClock');
-  if (el) el.textContent = timeStr;
+  if (el) {
+    if (liveMode) {
+      el.innerHTML = timeStr + ' <span style="font-size:11px; color:#15803d; font-weight:700; margin-left:6px;">[অটো-সিঙ্ক: ' + autoSyncSec + 's]</span>';
+    } else {
+      el.innerHTML = timeStr + ' <span style="font-size:11px; color:#64748b; margin-left:6px;">(পজড)</span>';
+    }
+  }
 }
-setInterval(updateClock, 1000);
+
+function handleAutoSyncTick() {
+  if (liveMode) {
+    autoSyncSec--;
+    if (autoSyncSec <= 0) {
+      autoSyncSec = 30;
+      loadData(true);
+    }
+  }
+  updateClock();
+}
+setInterval(handleAutoSyncTick, 1000);
 updateClock();
 
 // Theme Switcher
@@ -1373,11 +1391,11 @@ $('btnTheme').addEventListener('click', () => {
 });
 
 // Load App Data
-async function loadData() {
+async function loadData(silent = false) {
   try {
     const [pResp, bResp, pbResp] = await Promise.all([
-      fetch('data/phases.json', { cache: 'no-cache' }),
-      fetch('data/backtest.json').catch(() => null),
+      fetch('data/phases.json?_t=' + Date.now(), { cache: 'no-cache' }),
+      fetch('data/backtest.json?_t=' + Date.now()).catch(() => null),
       fetch('data/pressure_backtest.json').catch(() => null)
     ]);
     DATA = await pResp.json();
@@ -1385,7 +1403,13 @@ async function loadData() {
     try { if (pbResp && pbResp.ok) PB = await pbResp.json(); } catch(e) {}
 
     // Populate Top Meta
-    $('topMeta').innerHTML = `বাজার তারিখ: <b>${esc(DATA.last_date)}</b> | শেয়ার: <b>${DATA.stocks.length}টি</b>`;
+    const todayDhaka = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Dhaka' });
+    const isToday = DATA.last_date === todayDhaka;
+    const sessionTag = isToday 
+      ? '<span style="color:#16a34a; font-weight:700; margin-left:4px;">● লাইভ সেশন</span>' 
+      : '<span style="color:#d97706; font-weight:600; margin-left:4px;">○ পূর্ববর্তী ক্লোজিং (EOD)</span>';
+    const syncTime = DATA.updated_utc ? new Date(DATA.updated_utc).toLocaleTimeString('bn-BD', { timeZone: 'Asia/Dhaka', hour: '2-digit', minute: '2-digit' }) : '';
+    $('topMeta').innerHTML = `বাজার তারিখ: <b>${esc(DATA.last_date)}</b> ${sessionTag} ${syncTime ? `| সিঙ্ক: <b>${syncTime}</b>` : ''} | শেয়ার: <b>${DATA.stocks.length}টি</b>`;
 
     // Populate Sectors
     const secSet = new Set(DATA.stocks.map(s => s.s).filter(Boolean));

@@ -295,16 +295,16 @@ def run_daily(a):
         if now.weekday() in (4, 5) and not force:
             log('আজ শুক্র বা শনিবার, বাজার বন্ধ। কিছু যোগ করা হচ্ছে না।')
             return 0
-        if (now.hour, now.minute) < (14, 45) and not force:
-            log('এখনও ১৪:৪৫ হয়নি, বাজারের চূড়ান্ত দাম আসেনি। কিছু যোগ করা হচ্ছে না।')
+        if (now.hour, now.minute) < (10, 0) and not force:
+            log('সকাল ১০:০০ এর আগে বাজার শুরু হয়নি। কিছু যোগ করা হচ্ছে না।')
             return 0
         ts, has_time = datetime(today.year, today.month, today.day), False
         log(f'আজকের তারিখ ({today}) ধরে এগোচ্ছি।')
     else:
         log(f'পেজের তারিখ-সময়: {ts:%Y-%m-%d %H:%M}' + ('' if has_time else ' (সময় পাওয়া যায়নি)'))
-    ch, cm = (int(x) for x in getattr(a, 'cutoff', '14:20').split(':'))
+    ch, cm = (int(x) for x in getattr(a, 'cutoff', '10:00').split(':'))
     if has_time and ts.date() == today and (ts.hour, ts.minute) < (ch, cm) and not force:
-        log(f'পেজের সময় {ts:%H:%M}, যা {ch:02d}:{cm:02d} এর আগে। বাজারের চূড়ান্ত দাম এখনও আসেনি, এবার কিছু যোগ করা হচ্ছে না।')
+        log(f'সকাল ১০:০০ এর আগে লেনদেন শুরু হয়নি, এবার কিছু যোগ করা হচ্ছে না।')
         return 0
     date_str = ts.date().isoformat()
     recs = [r for r in (to_record(d, date_str) for d in rows) if r]

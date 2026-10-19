@@ -64,7 +64,7 @@ jobs:
 
       - name: আজকের ডেটা যোগ
         if: ${{ !(github.event.inputs.bootstrap == 'true' || github.event_name == 'push') && github.event.inputs.probe != 'true' }}
-        run: python scripts/update_data.py
+        run: python scripts/update_data.py --force
 
       - name: মৌলিক তথ্য (Paid-up, P/E — সপ্তাহে একবার)
         run: python scripts/update_fundamentals.py
