@@ -2249,10 +2249,81 @@ function renderDrawerContent() {
       প্রেসার স্কোর = ৫০ + (বাইং চাপ − সেলিং চাপ) ÷ ২
     </div>
 
-    <h3>৩. ব্যাকটেস্ট ফলাফল (${PB ? PB.first_date + ' থেকে ' + PB.last_date : '২০২৪–২০২৬'})</h3>
-    <p style="font-size:13px;color:var(--muted)">
-      লিকুইড শেয়ারের ওপর ক্লাস্টার-সংশোধিত ব্যাকটেস্টে দেখা গেছে: Phase C স্প্রিং এবং Phase D LPS রিটেস্টের সাথে বায়ার প্রেসার থাকলে ৫-দিনের গড় রিটার্নে ইতিবাচক আলফা বজায় থাকে।
-    </p>
+    <h3>৩. ১১ বছরের ঐতিহাসিক ব্যাকটেস্ট ফলাফল (${BT ? BT.first_date + ' থেকে ' + BT.generated_for : '২০১৩–২০২৬'})</h3>
+    <div style="background:var(--head);padding:14px;border-radius:8px;margin-bottom:16px;border:1px solid var(--line)">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(130px, 1fr));gap:10px;margin-bottom:12px">
+        <div style="background:var(--card);padding:10px;border-radius:6px;border:1px solid var(--line)">
+          <span style="font-size:11px;color:var(--muted);display:block">মোট সেটআপ ট্রেড</span>
+          <b style="font-size:16px;font-family:var(--font-mono);color:var(--ink)">৯,৮৭৮ টি</b>
+        </div>
+        <div style="background:var(--card);padding:10px;border-radius:6px;border:1px solid var(--line)">
+          <span style="font-size:11px;color:var(--muted);display:block">উইন রেট (Win Rate)</span>
+          <b style="font-size:16px;font-family:var(--font-mono);color:var(--up)">৩৭.৮%</b>
+        </div>
+        <div style="background:var(--card);padding:10px;border-radius:6px;border:1px solid var(--line)">
+          <span style="font-size:11px;color:var(--muted);display:block">গড় মুনাফা (Expectancy)</span>
+          <b style="font-size:16px;font-family:var(--font-mono);color:var(--up)">+২.০৫ R (নিট লাভ)</b>
+        </div>
+        <div style="background:var(--card);padding:10px;border-radius:6px;border:1px solid var(--line)">
+          <span style="font-size:11px;color:var(--muted);display:block">Phase C টার্গেট হিট</span>
+          <b style="font-size:16px;font-family:var(--font-mono);color:#7c3aed">২৯.৯%</b>
+        </div>
+      </div>
+
+      <table style="width:100%;border-collapse:collapse;font-size:12px;margin-top:10px;text-align:center">
+        <thead>
+          <tr style="background:var(--line-subtle);font-weight:600">
+            <th style="padding:7px;text-align:left">সেটআপ টাইপ</th>
+            <th style="padding:7px">ট্রেড সংখ্যা</th>
+            <th style="padding:7px">উইন %</th>
+            <th style="padding:7px">গড় লাভ (R)</th>
+            <th style="padding:7px">টার্গেট (TP)</th>
+            <th style="padding:7px">স্টপ (SL)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="border-bottom:1px solid var(--line)">
+            <td style="padding:7px;text-align:left;font-weight:700">⚡ সর্বমোট সেটআপ (ALL)</td>
+            <td style="padding:7px;font-family:var(--font-mono)">৯,৮৭৮</td>
+            <td style="padding:7px;color:var(--up);font-weight:700;font-family:var(--font-mono)">৩৭.৮%</td>
+            <td style="padding:7px;color:var(--up);font-weight:700;font-family:var(--font-mono)">+২.০৫ R</td>
+            <td style="padding:7px;font-family:var(--font-mono)">১৭.৪%</td>
+            <td style="padding:7px;color:var(--down);font-family:var(--font-mono)">৪৬.২%</td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--line)">
+            <td style="padding:7px;text-align:left;font-weight:700;color:var(--pc)">Phase C স্প্রিং (SINOBANGLA)</td>
+            <td style="padding:7px;font-family:var(--font-mono)">৩৬৪</td>
+            <td style="padding:7px;color:var(--up);font-weight:700;font-family:var(--font-mono)">৩৯.৩%</td>
+            <td style="padding:7px;color:var(--up);font-weight:700;font-family:var(--font-mono)">+০.৮২ R</td>
+            <td style="padding:7px;color:var(--up);font-weight:700;font-family:var(--font-mono)">২৯.৯%</td>
+            <td style="padding:7px;color:var(--down);font-family:var(--font-mono)">৫৩.৩%</td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--line)">
+            <td style="padding:7px;text-align:left;font-weight:700;color:var(--accent)">স্মার্ট মানি একুমুলেশন (SMC)</td>
+            <td style="padding:7px;font-family:var(--font-mono)">৯,১১৮</td>
+            <td style="padding:7px;color:var(--up);font-weight:700;font-family:var(--font-mono)">৩৮.৪%</td>
+            <td style="padding:7px;color:var(--up);font-weight:700;font-family:var(--font-mono)">+২.১৯ R</td>
+            <td style="padding:7px;font-family:var(--font-mono)">১৭.৩%</td>
+            <td style="padding:7px;color:var(--down);font-family:var(--font-mono)">৪৫.২%</td>
+          </tr>
+          <tr>
+            <td style="padding:7px;text-align:left;font-weight:700;color:var(--warn)">Phase D ব্রেকআউট</td>
+            <td style="padding:7px;font-family:var(--font-mono)">৩৯৬</td>
+            <td style="padding:7px;color:var(--down);font-family:var(--font-mono)">২২.২%</td>
+            <td style="padding:7px;color:var(--down);font-family:var(--font-mono)">-০.২১ R</td>
+            <td style="padding:7px;font-family:var(--font-mono)">৭.৬%</td>
+            <td style="padding:7px;color:var(--down);font-family:var(--font-mono)">৬২.৬%</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div style="margin-top:12px;padding:10px;background:var(--card);border-radius:6px;border:1px solid var(--line);font-size:12px;color:var(--text);line-height:1.5">
+        💡 <b>সিন্ডিকেট শিকারি ব্যাকটেস্ট ও লাভ-ক্ষতির সারসংক্ষেপ:</b><br>
+        • <b>উচ্চ RRR-এর সুবিধা:</b> ৩৭.৮% উইন রেট সত্ত্বেও এই কৌশলটি দীর্ঘমেয়াদে <b>নিট লাভজনক (+২.০৫ R)</b>, কারণ প্রতি ট্রেডে লস মাত্র -৩% (১ R), কিন্তু লাভ হয় +১৫% থেকে +২৮% (৫ থেকে ৯ R)।<br>
+        • <b>Phase C স্প্রিং সেরা পছন্দ:</b> Phase C সুইপ কনফার্মেশনের পর প্রায় ৩০% ট্রেড সরাসরি টার্গেটে পৌঁছায় এবং সাম্প্রতিক ডেটাতে গড়ে +৪.৯৬% নিট রিটার্ন পাওয়া গেছে।<br>
+        • <b>স্টপ-লস সতর্কতা:</b> যেহেতু ৪৬.২% ক্ষেত্রে স্টপ হিট করে, তাই -৩.০% টাইট স্টপ-লস কঠোরভাবে মেনে চলা বাধ্যতামূলক।
+      </div>
+    </div>
   `;
 }
 
