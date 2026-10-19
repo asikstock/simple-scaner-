@@ -1164,6 +1164,7 @@
 
 <script>
 "use strict";
+let liveMode = true;
 
 let DATA = null;
 let PRICES_MAP = {};
@@ -2357,7 +2358,6 @@ $('btnBell').addEventListener('click', () => {
 });
 
 // Live Mode Toggle
-let liveMode = true;
 $('btnLiveMode').addEventListener('click', () => {
   liveMode = !liveMode;
   $('btnLiveMode').innerHTML = liveMode ? '<span>((•))</span> লাইভ মোড অন' : '<span>○</span> লাইভ মোড অফ';
