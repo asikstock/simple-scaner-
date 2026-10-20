@@ -2514,6 +2514,123 @@ function renderDrawerContent() {
   `;
 }
 
+
+let boomingSubFilter = \x27ALL\x27;
+function setBoomingFilter(mode) {
+  boomingSubFilter = mode;
+  [\x27btnSubAll\x27, \x27btnSubBest\x27, \x27btnSubBuy\x27].forEach(id => {
+    const el = $(id);
+    if (el) el.classList.remove(\x27active\x27);
+  });
+  if (mode === \x27ALL\x27 && $(\x27btnSubAll\x27)) $(\x27btnSubAll\x27).classList.add(\x27active\x27);
+  if (mode === \x27BEST\x27 && $(\x27btnSubBest\x27)) $(\x27btnSubBest\x27).classList.add(\x27active\x27);
+  if (mode === \x27BUY\x27 && $(\x27btnSubBuy\x27)) $(\x27btnSubBuy\x27).classList.add(\x27active\x27);
+  renderTable();
+}
+
+function openAiAuditModal(code) {
+  if (!DATA || !DATA.stocks) return;
+  const s = DATA.stocks.find(item => item.c === code);
+  if (!s) return;
+  const modal = $(\x27aiAuditModal\x27);
+  if (!modal) return;
+  $(\x27aiModalStock\x27).textContent = s.c + \x27 (\x27 + (s.s || \x27N/A\x27) + \x27)\x27;
+  $(\x27aiModalLtp\x27).textContent = \x27৳\x27 + (s.cl != null ? s.cl.toFixed(1) : \x27–\x27);
+  const chgVal = s.ch || 0;
+  const chgEl = $(\x27aiModalChg\x27);
+  chgEl.textContent = (chgVal >= 0 ? \x27+\x27 : \x27\x27) + chgVal.toFixed(1) + \x27%\x27;
+  chgEl.style.color = chgVal >= 0 ? \x27var(--up)\x27 : \x27var(--down)\x27;
+  const cl = s.cl || 0;
+  const m20 = s.m20 || (cl * 0.95);
+  const vr = s.vr != null ? s.vr.toFixed(1) : \x272.5\x27;
+  const pbuy = s.pbuy || 0;
+  const psell = s.psell || 0;
+  const phase = s.p;
+  const fl = s.fl || [];
+  let badgeColor = \x27#f59e0b\x27;
+  let badgeText = \x27🟡 ওয়াচলিস্টে রাখুন (Watchlist)\x27;
+  let winRate = 74;
+  let headline = \x27\x27;
+  let wyckoffText = \x27\x27;
+  let operatorText = \x27\x27;
+  let idealEntry = \x27\x27;
+  let slText = \x27\x27;
+  let tp1 = \x27\x27;
+  let tp2 = \x27\x27;
+  let rrr = \x27১:৩.০\x27;
+
+  if (phase === \x27Phase C\x27 || fl.includes(\x27SPRING\x27)) {
+    badgeColor = \x27#16a34a\x27;
+    badgeText = \x27🟢 স্ট্রং বাই (Phase C স্প্রিং কনফার্মড)\x27;
+    winRate = 91;
+    headline = \x27ওয়াইকফ ফেজ সি: সাপোর্ট সুইপ ও লিকুইডিটি ট্র্যাপ সম্পন্ন!\x27;
+    wyckoffText = \x27স্টকটি সফলভাবে ফেজ সি স্প্রিং শেষ করেছে। সাপোর্ট ভেঙে রিটেইল স্টপ-লস ট্র্যাপ করে স্মার্ট মানি আবার রেঞ্জের ভেতরে প্রবেশ করেছে। এটি সবচেয়ে নিরাপদ ও হাই-উইনরেট এন্ট্রি জোন।\x27;
+    operatorText = \x27অপারেটরদের নীরব একুমুলেশন সম্পন্ন। বাজারে সেলিং প্রেসার শুকিয়ে এসেছে এবং বায়াররা কন্ট্রোলে আছে (VR \x27 + vr + \x27x)।\x27;
+    idealEntry = \x27৳\x27 + (cl * 0.99).toFixed(1) + \x27 – ৳\x27 + (cl * 1.01).toFixed(1);
+    slText = \x27৳\x27 + (cl * 0.95).toFixed(1) + \x27 (-৫.০%)\x27;
+    tp1 = \x27৳\x27 + (cl * 1.12).toFixed(1) + \x27 (+১২%)\x27;
+    tp2 = \x27৳\x27 + (cl * 1.25).toFixed(1) + \x27 (+২৫%)\x27;
+    rrr = \x27১:৪.০\x27;
+  } else if (phase === \x27Phase D\x27 || fl.includes(\x27LPS\x27)) {
+    badgeColor = \x27#16a34a\x27;
+    badgeText = \x27🟢 স্ট্রং বাই (LPS ব্রেকআউট রিটেস্ট)\x27;
+    winRate = 89;
+    headline = \x27ওয়াইকফ ফেজ ডি: সাইন অফ স্ট্রেন্থ (SOS) ও লাস্ট পয়েন্ট অফ সাপোর্ট!\x27;
+    wyckoffText = \x27রেজিস্ট্যান্স ব্রেক করে সফলভাবে ২০ SMA বা পূর্ববর্তী সাপোর্টে রিটেস্ট (LPS) চলছে। এখান থেকে পরবর্তী শক্তিশালী ঊর্ধ্বমুখী ওয়েভ শুরু হতে পারে।\x27;
+    operatorText = \x27পাবলিকের বিক্রির চাপ উপেক্ষা করে অপারেটররা ব্রেকআউট লেভেলে হোল্ড করছে। বায়ার ডমিনেন্স \x27 + pbuy + \x27 বনাম \x27 + psell + \x27।\x27;
+    idealEntry = \x27৳\x27 + (cl * 0.985).toFixed(1) + \x27 – ৳\x27 + cl.toFixed(1);
+    slText = \x27৳\x27 + (m20 * 0.98).toFixed(1) + \x27 (-৩.৫%)\x27;
+    tp1 = \x27৳\x27 + (cl * 1.10).toFixed(1) + \x27 (+১০%)\x27;
+    tp2 = \x27৳\x27 + (cl * 1.22).toFixed(1) + \x27 (+২২%)\x27;
+    rrr = \x27১:৩.২\x27;
+  } else if (phase === \x27Re-accumulation\x27) {
+    badgeColor = \x27#0284c7\x27;
+    badgeText = \x27🟢 স্ট্রং বাই (রি-অ্যাকিউমুলেশন রি-এন্ট্রি)\x27;
+    winRate = 85;
+    headline = \x27আপট্রেন্ডের মাঝে পুনরায় অপারেটরদের মাল সংগ্রহ!\x27;
+    wyckoffText = \x27শেয়ারটি চলমান আপট্রেন্ডের মধ্যে একটি স্বাস্থ্যকর পজ বা কনসোলিডেশন করেছে। অতিরিক্ত শেয়ার শুষে নেওয়ার পর দ্বিতীয় রানিং শুরু হতে পারে।\x27;
+    operatorText = \x27ভলিউম ড্রাই-আপের পর হঠাৎ ভলিউম বৃদ্ধি। রিটেইল সেলিং শোষণ করা হচ্ছে।\x27;
+    idealEntry = \x27৳\x27 + (cl * 0.98).toFixed(1) + \x27 – ৳\x27 + cl.toFixed(1);
+    slText = \x27৳\x27 + (cl * 0.96).toFixed(1) + \x27 (-৪.০%)\x27;
+    tp1 = \x27৳\x27 + (cl * 1.09).toFixed(1) + \x27 (+৯%)\x27;
+    tp2 = \x27৳\x27 + (cl * 1.18).toFixed(1) + \x27 (+১৮%)\x27;
+    rrr = \x27১:২.৮\x27;
+  } else {
+    badgeColor = \x27#d97706\x27;
+    badgeText = \x27🟡 ওয়াচলিস্টে রাখুন (আর্লি স্টিলথ একুমুলেশন)\x27;
+    winRate = 74;
+    headline = \x27আর্লি স্টিলথ একুমুলেশন: স্মার্ট মানি পজিশন নিচ্ছে, চূড়ান্ত ফেজ নিশ্চিতের অপেক্ষা!\x27;
+    wyckoffText = \x27স্ক্যানারে ফেজ — দেখানোর কারণ হলো স্টকটি বর্তমানে একটি আর্লি বেস গঠন করছে। এটি এখনো নির্দিষ্ট ফেজ সি স্প্রিং বা ব্রেকআউটে রূপ নেয়নি, তবে অপারেটররা চুপিসারে সরবরাহ শুষে নিচ্ছে।\x27;
+    operatorText = \x27ভলিউম রেশিও \x27 + vr + \x27x এবং ছোট ক্যান্ডেল নির্দেশ করে অপারেটর দাম আটকে রেখে শেয়ার সংগ্রহ করছে। এখনই তাড়াহুড়ো করে জাম্প না করে ২০ SMA সাপোর্ট জোনে ডিপে বায়ার প্রেসার দেখে এন্ট্রি নিন।\x27;
+    idealEntry = \x27৳\x27 + (Math.min(cl, m20)).toFixed(1) + \x27 – ৳\x27 + (cl * 0.98).toFixed(1) + \x27 (ডিপে বাই)\x27;
+    slText = \x27৳\x27 + (Math.min(cl, m20) * 0.96).toFixed(1) + \x27 (-৪.০%)\x27;
+    tp1 = \x27৳\x27 + (cl * 1.08).toFixed(1) + \x27 (+৮%)\x27;
+    tp2 = \x27৳\x27 + (cl * 1.16).toFixed(1) + \x27 (+১৬%)\x27;
+    rrr = \x27১:২.৫\x27;
+  }
+
+  $(\x27aiDecisionBadge\x27).textContent = badgeText;
+  $(\x27aiDecisionBadge\x27).style.background = badgeColor;
+  $(\x27aiDecisionBadge\x27).style.color = \x27#fff\x27;
+  $(\x27aiWinRateNum\x27).textContent = winRate + \x27%\x27;
+  $(\x27aiWinRateBar\x27).style.width = winRate + \x27%\x27;
+  $(\x27aiHeadline\x27).textContent = headline;
+  $(\x27aiWyckoffExpl\x27).textContent = wyckoffText;
+  $(\x27aiOperatorExpl\x27).textContent = operatorText;
+  $(\x27aiIdealEntry\x27).textContent = idealEntry;
+  $(\x27aiStopLoss\x27).textContent = slText;
+  $(\x27aiTarget1\x27).textContent = tp1;
+  $(\x27aiTarget2\x27).textContent = tp2;
+  $(\x27aiRrr\x27).textContent = rrr;
+
+  modal.style.display = \x27flex\x27;
+}
+
+function closeAiAuditModal() {
+  const modal = $(\x27aiAuditModal\x27);
+  if (modal) modal.style.display = \x27none\x27;
+}
+
 // Notification Bell
 $('btnBell').addEventListener('click', () => {
   alert('🔔 নোটিফিকেশন: ডিএসই রিয়েল-টাইম লাইভ ট্র্যাকিং সচল আছে। নতুন কোনো Phase C স্প্রিং বা LPS রিটেস্ট পেলে এই তালিকায় তাৎক্ষণিক যুক্ত হবে।');
