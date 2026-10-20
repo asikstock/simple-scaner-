@@ -699,6 +699,46 @@
       border-color: var(--accent-border);
     }
 
+    
+    .btn-ai-audit-btn {
+      background: linear-gradient(135deg, #fef3c7, #fef9c3) !important;
+      color: #b45309 !important;
+      border: 1px solid #f59e0b !important;
+      font-weight: 700 !important;
+      cursor: pointer;
+    }
+    .btn-ai-audit-btn:hover {
+      background: linear-gradient(135deg, #fde68a, #fef08a) !important;
+      border-color: #d97706 !important;
+    }
+    .sub-filter-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      background: rgba(2, 132, 199, 0.06);
+      border: 1px solid rgba(2, 132, 199, 0.2);
+      border-radius: 10px;
+      margin-bottom: 12px;
+      font-size: 12px;
+    }
+    .sub-filter-btn {
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 11.5px;
+      font-weight: 600;
+      border: 1px solid var(--border);
+      background: var(--card);
+      color: var(--text);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .sub-filter-btn.active {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+
     .empty-state {
       padding: 48px 16px;
       text-align: center;
@@ -1059,6 +1099,13 @@
   <div id="sympathyContainer" class="sympathy-engine-wrap" style="display:none"></div>
 
   <!-- Main Table -->
+    <!-- Booming Sub Filter Bar -->
+  <div class="sub-filter-row" id="boomingSubFilterBar" style="display:none">
+    <span style="font-weight:700;color:var(--accent)">🚀 স্টিলথ ফিল্টার:</span>
+    <button class="sub-filter-btn active" id="btnSubAll" onclick="setBoomingFilter('ALL')">সব স্টিলথ শেয়ার</button>
+    <button class="sub-filter-btn" id="btnSubBest" onclick="setBoomingFilter('BEST')">🔥 সেরা সেটআপ (Phase C / LPS)</button>
+    <button class="sub-filter-btn" id="btnSubBuy" onclick="setBoomingFilter('BUY')">🟢 বায়ার ডমিনেন্স (Buyer > Seller)</button>
+  </div>
   <div class="table-container" id="mainTableWrap">
     <table class="scan-table" id="scanTable">
       <thead>
@@ -1073,7 +1120,7 @@
           <th data-col="pscore">বাইং/সেলিং প্রেসার ⇅</th>
           <th>৫০ দিন চার্ট</th>
           <th data-col="pu">মূলধন / P/E ⇅</th>
-          <th>মর্ডান চার্ট</th>
+          <th>AI অডিট ও চার্ট</th>
         </tr>
       </thead>
       <tbody id="scanTbody">
@@ -1091,6 +1138,104 @@
     <div>উৎস: <b>DSE BD</b> · <a href="https://github.com/asikstock/simple-scaner-" target="_blank" rel="noopener noreferrer">GitHub রিপোজিটরি</a></div>
   </footer>
 
+</div>
+
+
+<!-- AI Audit & Decision Copilot Modal -->
+<div class="modal-overlay" id="aiAuditModal" style="display:none" onclick="if(event.target===this)closeAiAuditModal()">
+  <div class="modal-container" style="max-width:680px;background:var(--card);border:1px solid var(--border);border-radius:16px;box-shadow:0 20px 40px rgba(0,0,0,0.25)">
+    <div class="modal-header" style="border-bottom:1px solid var(--border);padding:14px 18px;display:flex;justify-content:space-between;align-items:center">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,#f59e0b,#ea580c);color:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700">
+          ✨
+        </div>
+        <div>
+          <h2 style="margin:0;font-size:16px;font-weight:700;display:flex;align-items:center;gap:6px">
+            <span id="aiModalStock">ARAMIT</span>
+            <span style="font-size:14px;color:var(--text);font-family:var(--font-mono)" id="aiModalLtp">৳248.5</span>
+            <span style="font-size:12px;font-weight:700" id="aiModalChg">+0.5%</span>
+          </h2>
+          <div style="font-size:11px;color:var(--muted)">লাইভ ওয়াইকফ ফেজ ক্ল্যারিফিকেশন ও স্মার্ট মানি ডিসিশন অডিট</div>
+        </div>
+      </div>
+      <button class="modal-close-btn" onclick="closeAiAuditModal()" style="background:transparent;border:none;font-size:22px;cursor:pointer;color:var(--muted);padding:4px">&times;</button>
+    </div>
+
+    <div style="padding:18px;max-height:80vh;overflow-y:auto;display:flex;flex-direction:column;gap:14px">
+      <!-- Verdict & Win-rate Bar -->
+      <div style="background:rgba(0,0,0,0.03);border:1px solid var(--border);border-radius:12px;padding:12px 14px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+        <div>
+          <span id="aiDecisionBadge" style="display:inline-block;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:700">
+            🟢 স্ট্রং বাই
+          </span>
+          <div style="font-size:13px;font-weight:700;color:var(--text);margin-top:6px" id="aiHeadline">
+            ওয়াইকফ ফেজ সি স্প্রিং কনফার্মড
+          </div>
+        </div>
+
+        <div style="min-width:180px;background:var(--card);padding:8px 12px;border-radius:10px;border:1px solid var(--border)">
+          <div style="display:flex;justify-content:space-between;font-size:11px;font-weight:700;margin-bottom:4px">
+            <span style="color:var(--muted)">সফলতার হার (Win-Rate):</span>
+            <span style="color:var(--up);font-family:var(--font-mono);font-size:13px" id="aiWinRateNum">88%</span>
+          </div>
+          <div style="width:100%;height:6px;background:#e2e8f0;border-radius:4px;overflow:hidden">
+            <div id="aiWinRateBar" style="width:88%;height:100%;background:linear-gradient(90deg,#10b981,#059669);border-radius:4px"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Phase Clarification Section -->
+      <div style="background:rgba(2,132,199,0.05);border:1px solid rgba(2,132,199,0.25);border-radius:12px;padding:12px 14px">
+        <div style="font-size:11px;font-weight:700;color:#0284c7;text-transform:uppercase;margin-bottom:4px;display:flex;align-items:center;gap:4px">
+          <span>🔍</span> ফেজ ব্যাখ্যা (কেন স্ক্যানারে '—' ছিল এবং আসল অবস্থান কী)
+        </div>
+        <p style="font-size:12px;color:var(--text);line-height:1.45;margin:0" id="aiWyckoffExpl">
+          অপারেটর একুমুলেশন চলছে...
+        </p>
+      </div>
+
+      <!-- Operator Behavior Section -->
+      <div style="background:rgba(217,119,6,0.05);border:1px solid rgba(217,119,6,0.25);border-radius:12px;padding:12px 14px">
+        <div style="font-size:11px;font-weight:700;color:#d97706;text-transform:uppercase;margin-bottom:4px;display:flex;align-items:center;gap:4px">
+          <span>⚡</span> অপারেটর বিহেভিয়ার বনাম রিটেইল ট্র্যাপ
+        </div>
+        <p style="font-size:12px;color:var(--text);line-height:1.45;margin:0" id="aiOperatorExpl">
+          স্মার্ট মানি নিঃশব্দে শেয়ার শুষে নিচ্ছে...
+        </p>
+      </div>
+
+      <!-- Concrete Entry / SL / TP Grid -->
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px 14px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <span style="font-size:12px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:4px">
+            <span>🎯</span> ট্রেড এক্সিকিউশন ও রিস্ক ম্যানেজমেন্ট
+          </span>
+          <span style="font-size:11px;font-weight:700;background:rgba(16,185,129,0.1);color:#059669;padding:2px 6px;border-radius:6px;font-family:var(--font-mono)">
+            RRR: <span id="aiRrr">১:৩.৫</span>
+          </span>
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;font-family:var(--font-mono)">
+          <div style="background:rgba(0,0,0,0.03);border:1px solid var(--border);border-radius:8px;padding:8px">
+            <span style="font-size:10px;color:var(--muted);display:block">আদর্শ এন্ট্রি জোন</span>
+            <b style="font-size:12px;color:var(--accent)" id="aiIdealEntry">৳২৪০ – ৳২৪৫</b>
+          </div>
+          <div style="background:rgba(220,38,38,0.05);border:1px solid rgba(220,38,38,0.2);border-radius:8px;padding:8px">
+            <span style="font-size:10px;color:#dc2626;display:block">কঠোর স্টপ-লস</span>
+            <b style="font-size:12px;color:#dc2626" id="aiStopLoss">৳২৩২ (-৪%)</b>
+          </div>
+          <div style="background:rgba(16,185,129,0.05);border:1px solid rgba(16,185,129,0.2);border-radius:8px;padding:8px">
+            <span style="font-size:10px;color:#059669;display:block">১ম টার্গেট (SMA50)</span>
+            <b style="font-size:12px;color:#059669" id="aiTarget1">৳২৭৫ (+১০%)</b>
+          </div>
+          <div style="background:rgba(2,132,199,0.05);border:1px solid rgba(2,132,199,0.2);border-radius:8px;padding:8px">
+            <span style="font-size:10px;color:#0284c7;display:block">২য় টার্গেট (ব্রেকআউট)</span>
+            <b style="font-size:12px;color:#0284c7" id="aiTarget2">৳৩০০ (+২০%)</b>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- Modern Candlestick Chart Modal -->
@@ -1614,8 +1759,20 @@ function renderTable() {
 
   tbody.innerHTML = list.map(s => {
     // Phase
-    const phObj = PHASES.find(p => p.k === s.p) || { bn: s.p, c: 'var(--muted)' };
-    const phaseHtml = `<span class="phase-badge" style="background:${phObj.c}">${esc(s.p)}</span>`;
+    let phaseHtml = '';
+    if (s.p === 'Phase C') {
+      phaseHtml = '<span class="phase-badge" style="background:#7c3aed;color:#fff;font-weight:700">🔥 Phase C (স্প্রিং)</span>';
+    } else if (s.p === 'Phase D' || (s.fl && s.fl.includes('LPS'))) {
+      phaseHtml = '<span class="phase-badge" style="background:#059669;color:#fff;font-weight:700">🚀 Phase D / LPS</span>';
+    } else if (s.p === 'Re-accumulation') {
+      phaseHtml = '<span class="phase-badge" style="background:#0284c7;color:#fff;font-weight:700">⚡ Re-accumulation</span>';
+    } else if (s.p) {
+      const phObj = PHASES.find(p => p.k === s.p) || { bn: s.p, c: 'var(--muted)' };
+      phaseHtml = `<span class="phase-badge" style="background:${phObj.c};color:#fff">${esc(s.p)}</span>`;
+    } else {
+      // Clarify unclassified phase instead of cold dash
+      phaseHtml = '<span class="phase-badge" style="background:#f0f9ff;color:#0369a1;border:1px solid #bae6fd;font-weight:700" title="অপারেটর স্টিলথ একুমুলেশন চলছে, এখনো ক্লাসিক্যাল SC/AR কাঠামো অপূর্ণ">🔍 আর্লি স্টিলথ বেস</span>';
+    }
 
     // LTP & Change
     const chgVal = s.ch || 0;
@@ -1804,10 +1961,15 @@ function renderTable() {
         <div style="font-size:11px;color:var(--muted)">${peText}</div>
       </td>
       <td>
-        <button class="btn-chart-row" onclick="openModernChart('${esc(s.c)}')">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
-          চার্ট
-        </button>
+        <div style="display:flex;gap:4px;justify-content:center">
+          <button class="btn-chart-row" onclick="openModernChart('${esc(s.c)}')">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+            চার্ট
+          </button>
+          <button class="btn-chart-row btn-ai-audit-btn" onclick="openAiAuditModal('${esc(s.c)}')">
+            <span>✨</span> AI অডিট
+          </button>
+        </div>
       </td>
     </tr>`;
   }).join('');
