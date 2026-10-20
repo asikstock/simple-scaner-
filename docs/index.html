@@ -2549,7 +2549,7 @@ function openAiAuditModal(code) {
   const fl = s.fl || [];
   let badgeColor = '#f59e0b';
   let badgeText = '🟡 ওয়াচলিস্টে রাখুন (Watchlist)';
-  let winRate = 74;
+  let baseWinRate = 70;
   let headline = '';
   let wyckoffText = '';
   let operatorText = '';
@@ -2559,10 +2559,19 @@ function openAiAuditModal(code) {
   let tp2 = '';
   let rrr = '১:৩.০';
 
+  // Dynamic Win-Rate Formula based on real technical strength
+  let dynamicBonus = 0;
+  if (pbuy > psell) dynamicBonus += Math.min(5, Math.round((pbuy - psell) * 0.12));
+  if (psell > pbuy) dynamicBonus -= Math.min(6, Math.round((psell - pbuy) * 0.12));
+  if (parseFloat(vr) >= 2.0) dynamicBonus += 4;
+  else if (parseFloat(vr) >= 1.2) dynamicBonus += 2;
+  if (s.pu && s.pu <= 50) dynamicBonus += 3; // Low-cap cornering advantage
+  if (m20 && cl > m20 * 1.08) dynamicBonus -= 4; // Overextended penalty
+
   if (phase === 'Phase C' || fl.includes('SPRING')) {
     badgeColor = '#16a34a';
     badgeText = '🟢 স্ট্রং বাই (Phase C স্প্রিং কনফার্মড)';
-    winRate = 91;
+    baseWinRate = 86;
     headline = 'ওয়াইকফ ফেজ সি: সাপোর্ট সুইপ ও লিকুইডিটি ট্র্যাপ সম্পন্ন!';
     wyckoffText = 'স্টকটি সফলভাবে ফেজ সি স্প্রিং শেষ করেছে। সাপোর্ট ভেঙে রিটেইল স্টপ-লস ট্র্যাপ করে স্মার্ট মানি আবার রেঞ্জের ভেতরে প্রবেশ করেছে। এটি সবচেয়ে নিরাপদ ও হাই-উইনরেট এন্ট্রি জোন।';
     operatorText = 'অপারেটরদের নীরব একুমুলেশন সম্পন্ন। বাজারে সেলিং প্রেসার শুকিয়ে এসেছে এবং বায়াররা কন্ট্রোলে আছে (VR ' + vr + 'x)।';
@@ -2574,7 +2583,7 @@ function openAiAuditModal(code) {
   } else if (phase === 'Phase D' || fl.includes('LPS')) {
     badgeColor = '#16a34a';
     badgeText = '🟢 স্ট্রং বাই (LPS ব্রেকআউট রিটেস্ট)';
-    winRate = 89;
+    baseWinRate = 83;
     headline = 'ওয়াইকফ ফেজ ডি: সাইন অফ স্ট্রেন্থ (SOS) ও লাস্ট পয়েন্ট অফ সাপোর্ট!';
     wyckoffText = 'রেজিস্ট্যান্স ব্রেক করে সফলভাবে ২০ SMA বা পূর্ববর্তী সাপোর্টে রিটেস্ট (LPS) চলছে। এখান থেকে পরবর্তী শক্তিশালী ঊর্ধ্বমুখী ওয়েভ শুরু হতে পারে।';
     operatorText = 'পাবলিকের বিক্রির চাপ উপেক্ষা করে অপারেটররা ব্রেকআউট লেভেলে হোল্ড করছে। বায়ার ডমিনেন্স ' + pbuy + ' বনাম ' + psell + '।';
@@ -2586,7 +2595,7 @@ function openAiAuditModal(code) {
   } else if (phase === 'Re-accumulation') {
     badgeColor = '#0284c7';
     badgeText = '🟢 স্ট্রং বাই (রি-অ্যাকিউমুলেশন রি-এন্ট্রি)';
-    winRate = 85;
+    baseWinRate = 80;
     headline = 'আপট্রেন্ডের মাঝে পুনরায় অপারেটরদের মাল সংগ্রহ!';
     wyckoffText = 'শেয়ারটি চলমান আপট্রেন্ডের মধ্যে একটি স্বাস্থ্যকর পজ বা কনসোলিডেশন করেছে। অতিরিক্ত শেয়ার শুষে নেওয়ার পর দ্বিতীয় রানিং শুরু হতে পারে।';
     operatorText = 'ভলিউম ড্রাই-আপের পর হঠাৎ ভলিউম বৃদ্ধি। রিটেইল সেলিং শোষণ করা হচ্ছে।';
@@ -2598,7 +2607,7 @@ function openAiAuditModal(code) {
   } else {
     badgeColor = '#d97706';
     badgeText = '🟡 ওয়াচলিস্টে রাখুন (আর্লি স্টিলথ একুমুলেশন)';
-    winRate = 74;
+    baseWinRate = 71;
     headline = 'আর্লি স্টিলথ একুমুলেশন: স্মার্ট মানি পজিশন নিচ্ছে, চূড়ান্ত ফেজ নিশ্চিতের অপেক্ষা!';
     wyckoffText = 'স্ক্যানারে ফেজ — দেখানোর কারণ হলো স্টকটি বর্তমানে একটি আর্লি বেস গঠন করছে। এটি এখনো নির্দিষ্ট ফেজ সি স্প্রিং বা ব্রেকআউটে রূপ নেয়নি, তবে অপারেটররা চুপিসারে সরবরাহ শুষে নিচ্ছে।';
     operatorText = 'ভলিউম রেশিও ' + vr + 'x এবং ছোট ক্যান্ডেল নির্দেশ করে অপারেটর দাম আটকে রেখে শেয়ার সংগ্রহ করছে। এখনই তাড়াহুড়ো করে জাম্প না করে ২০ SMA সাপোর্ট জোনে ডিপে বায়ার প্রেসার দেখে এন্ট্রি নিন।';
@@ -2608,6 +2617,9 @@ function openAiAuditModal(code) {
     tp2 = '৳' + (cl * 1.16).toFixed(1) + ' (+১৬%)';
     rrr = '১:২.৫';
   }
+
+  const finalWinRate = Math.min(92, Math.max(63, baseWinRate + dynamicBonus));
+  const winRate = finalWinRate;
 
   $('aiDecisionBadge').textContent = badgeText;
   $('aiDecisionBadge').style.background = badgeColor;
