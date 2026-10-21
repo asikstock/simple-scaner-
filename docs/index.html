@@ -1012,6 +1012,53 @@
       cursor: pointer;
     }
 
+    
+    /* Mobile Category Dropdown Selector */
+    .category-select-wrap {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 8px;
+    }
+    .category-select-pill {
+      height: 36px;
+      border-radius: 8px;
+      border: 1px solid var(--accent);
+      background: var(--card);
+      color: var(--accent);
+      font-weight: 700;
+      font-size: 13px;
+      padding: 4px 10px;
+      outline: none;
+      cursor: pointer;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+      flex: 1;
+      max-width: 320px;
+    }
+    .category-select-pill:focus {
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+    }
+    .btn-view-all-stocks {
+      height: 32px;
+      padding: 2px 10px;
+      font-size: 12px;
+      font-weight: 700;
+      background: var(--head);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      white-space: nowrap;
+      transition: all 0.15s;
+    }
+    .btn-view-all-stocks:hover, .btn-view-all-stocks.active {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+
     .empty-state {
       padding: 48px 16px;
       text-align: center;
@@ -1353,9 +1400,26 @@
     </div>
   </div>
 
-  <!-- Filter Bar -->
+  <!-- Filter Bar with Category Selector & Quick Switch -->
   <div class="filter-row">
     <div class="filter-left">
+      <!-- Direct Category Switcher for Easy Mobile Access -->
+      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+        <select class="category-select-pill" id="catDropdownSelect" onchange="setTab(this.value)">
+          <option value="__booming">🚀 বুমিং অপারেটর স্টিলথ</option>
+          <option value="__all">🌐 সব শেয়ার (All Stocks)</option>
+          <option value="Phase C">🔥 Phase C (স্প্রিং)</option>
+          <option value="Phase D">🚀 Phase D (ব্রেকআউট)</option>
+          <option value="__pbuy">🟢 বায়ার ডমিনেন্স</option>
+          <option value="__syndicate">⚡ সিন্ডিকেট শিকারি</option>
+          <option value="__prime">★ আগামীকালের সেরা এন্ট্রি</option>
+          <option value="__climax_dump">🚨 ডাম্প সতর্কতা</option>
+        </select>
+        <button class="btn-view-all-stocks" id="btnToggleAllStocks" onclick="setTab('__all')">
+          <span>🌐</span> <span>সব শেয়ার</span>
+        </button>
+      </div>
+
       <input type="search" class="filter-input" id="tblSearch" placeholder="কোড বা সেক্টর ফিল্টার করুন...">
       <select class="filter-select" id="secFilter">
         <option value="">সব সেক্টর (19)</option>
@@ -1651,6 +1715,13 @@ const PHASES = [
 ];
 
 const TABS_CONFIG = [
+  {
+    k: '__all',
+    label: '🌐 সব শেয়ার (All)',
+    title: 'ঢাকা স্টক এক্সচেঞ্জ (DSE) সব শেয়ার (All Market Stocks)',
+    desc: 'বাজারের সকল নিবন্ধিত শেয়ারের পূর্ণাঙ্গ তালিকা। ফিল্টার বা সেক্টর পরিবর্তন করে যেকোনো শেয়ার খুঁজুন।',
+    filter: () => true
+  },
   {
     k: '__prime',
     label: '★ আগামীকালের সেরা এন্ট্রি',
@@ -1979,18 +2050,28 @@ function renderTabs() {
 
   const bar = $('tabsBar');
   bar.innerHTML = '';
+
+  const catSelect = $('catDropdownSelect');
+  if (catSelect) {
+    catSelect.innerHTML = TABS_CONFIG.map(cfg => {
+      const cnt = baseList.filter(cfg.filter).length;
+      return `<option value="${esc(cfg.k)}"${cfg.k === currentTab ? ' selected' : ''}>${esc(cfg.label)} (${cnt}টি)</option>`;
+    }).join('');
+    catSelect.value = currentTab;
+  }
+
+  const btnAll = $('btnToggleAllStocks');
+  if (btnAll) {
+    btnAll.classList.toggle('active', currentTab === '__all');
+  }
+
   TABS_CONFIG.forEach(cfg => {
     const cnt = baseList.filter(cfg.filter).length;
     const btn = document.createElement('button');
     btn.className = 'tab-pill' + (cfg.k === currentTab ? ' active' : '');
     btn.innerHTML = `${esc(cfg.label)} <span class="pill-count">${cnt}</span>`;
     btn.onclick = () => {
-      currentTab = cfg.k;
-      try { localStorage.setItem('dse_last_tab', currentTab); } catch(e){}
-      $('contextTitle').textContent = cfg.title;
-      $('contextDesc').textContent = cfg.desc;
-      renderTabs();
-      renderTable();
+      setTab(cfg.k);
     };
     bar.appendChild(btn);
   });
