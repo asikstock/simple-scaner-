@@ -844,6 +844,174 @@
       white-space: nowrap;
     }
 
+    
+    /* Mobile-first Chart Modal, Stock Search & POC */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.75);
+      backdrop-filter: blur(5px);
+      z-index: 100;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 12px;
+    }
+    @media (max-width: 640px) {
+      .modal-overlay {
+        padding: 4px;
+        align-items: flex-end;
+      }
+      .modal-container {
+        max-height: 96vh !important;
+        border-radius: 16px 16px 0 0 !important;
+      }
+      .modal-header {
+        padding: 10px 12px !important;
+        flex-wrap: wrap !important;
+        position: relative !important;
+      }
+      .modal-close-prominent {
+        position: absolute !important;
+        top: 8px !important;
+        right: 8px !important;
+        z-index: 10 !important;
+      }
+    }
+    .modal-close-prominent {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      padding: 6px 12px;
+      background: #fee2e2;
+      color: #991b1b;
+      border: 1px solid #f87171;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      min-height: 38px;
+    }
+    .modal-close-prominent:hover {
+      background: #fecaca;
+      border-color: #ef4444;
+      transform: scale(1.02);
+    }
+    .modal-search-box-wrap {
+      position: relative;
+      flex: 1;
+      min-width: 170px;
+      max-width: 320px;
+    }
+    .modal-search-input {
+      width: 100%;
+      height: 36px;
+      padding: 4px 10px 4px 30px;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      background: var(--card);
+      color: var(--text);
+      font-size: 12.5px;
+      font-weight: 600;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .modal-search-input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+    }
+    .modal-search-icon {
+      position: absolute;
+      left: 8px;
+      top: 50%;
+      transform: translateY(-50%);
+      pointer-events: none;
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .modal-search-dropdown {
+      position: absolute;
+      top: calc(100% + 4px);
+      left: 0;
+      right: 0;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+      max-height: 240px;
+      overflow-y: auto;
+      z-index: 120;
+    }
+    .modal-search-item {
+      padding: 8px 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--line);
+      cursor: pointer;
+      font-size: 12px;
+      transition: background 0.1s;
+    }
+    .modal-search-item:last-child {
+      border-bottom: none;
+    }
+    .modal-search-item:hover {
+      background: var(--accent-soft);
+    }
+    .modal-quick-chips {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      overflow-x: auto;
+      padding: 4px 0;
+      scrollbar-width: none;
+    }
+    .modal-quick-chips::-webkit-scrollbar {
+      display: none;
+    }
+    .modal-quick-chip {
+      padding: 3px 8px;
+      border-radius: 6px;
+      background: var(--head);
+      border: 1px solid var(--line);
+      font-size: 11px;
+      font-weight: 700;
+      font-family: var(--font-mono);
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.15s;
+    }
+    .modal-quick-chip:hover, .modal-quick-chip.active {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+    .modal-mobile-bottom-bar {
+      display: none;
+      padding: 10px 14px;
+      background: var(--head);
+      border-top: 1px solid var(--line);
+      text-align: center;
+    }
+    @media (max-width: 640px) {
+      .modal-mobile-bottom-bar {
+        display: block;
+      }
+    }
+    .btn-mobile-bottom-close {
+      width: 100%;
+      height: 40px;
+      background: #fee2e2;
+      color: #991b1b;
+      border: 1px solid #f87171;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 13.5px;
+      cursor: pointer;
+    }
+
     .empty-state {
       padding: 48px 16px;
       text-align: center;
@@ -1348,20 +1516,36 @@
   <div class="modal-container">
     <div class="modal-header">
       <div class="modal-header-left">
-        <div class="brand-icon" style="width:32px;height:32px;border-radius:8px">
+        <div class="brand-icon" style="width:32px;height:32px;border-radius:8px;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
         </div>
         <div>
-          <h2 style="margin:0;font-size:17px;font-weight:700;display:flex;align-items:center;gap:8px" id="modalStockTitle">
-            MERCANBANK <span class="badge-tag" style="background:#dbeafe;color:#1e40af" id="modalStockSector">Bank</span>
+          <h2 style="margin:0;font-size:16px;font-weight:700;display:flex;align-items:center;gap:6px;flex-wrap:wrap" id="modalStockTitle">
+            ARAMIT <span class="badge-tag" style="background:#dbeafe;color:#1e40af" id="modalStockSector">Engineering</span>
           </h2>
-          <div style="font-size:12px;color:var(--muted)" id="modalStockSub">শেষ ক্লোজ: ৳10.2 | ক্যাটাগরি: A</div>
+          <div style="font-size:11.5px;color:var(--muted)" id="modalStockSub">শেষ ক্লোজ: ৳248.5 | ক্যাটাগরি: A</div>
         </div>
       </div>
-      <div style="display:flex;align-items:center;gap:8px">
-        <select id="modalStockSelect" class="filter-select" style="height:32px;padding:4px 8px;font-size:12.5px"></select>
-        <button class="btn btn-icon-only" id="btnCloseModal" style="width:32px;height:32px">✕</button>
+
+      <div style="display:flex;align-items:center;gap:8px;flex:1;justify-content:flex-end;max-width:440px">
+        <!-- Instant Search Box for Mobile & Desktop -->
+        <div class="modal-search-box-wrap">
+          <span class="modal-search-icon">🔍</span>
+          <input type="search" id="modalStockSearchInput" class="modal-search-input" placeholder="স্টক খুঁজুন (যেমন: ARAMIT...)" autocomplete="off" />
+          <div id="modalStockSearchDropdown" class="modal-search-dropdown" style="display:none"></div>
+        </div>
+
+        <!-- Prominent Close Button -->
+        <button class="modal-close-prominent" id="btnCloseModal" onclick="closeModernChartModal()">
+          <span>✕</span> <span style="font-size:11px">বন্ধ করুন</span>
+        </button>
       </div>
+    </div>
+
+    <!-- Quick Stock Chips Bar -->
+    <div style="padding:4px 16px;background:rgba(0,0,0,0.02);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:8px;font-size:11px">
+      <span style="color:var(--muted);font-weight:700;white-space:nowrap">দ্রুত দেখুন:</span>
+      <div class="modal-quick-chips" id="modalQuickChips"></div>
     </div>
     <div class="modal-body">
       <div class="chart-stats-strip" id="modalStatsStrip"></div>
@@ -1401,6 +1585,13 @@
       <div id="chartSvgContainer" style="width:100%;height:440px;position:relative;background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden">
         <div id="chartTooltip" class="chart-tooltip-box"></div>
       </div>
+    </div>
+    
+    <!-- Mobile Floating Bottom Close Bar -->
+    <div class="modal-mobile-bottom-bar">
+      <button class="btn-mobile-bottom-close" onclick="closeModernChartModal()">
+        ✕ চার্ট বন্ধ করুন
+      </button>
     </div>
   </div>
 </div>
@@ -2167,30 +2358,95 @@ $('btnHeroChart').addEventListener('click', () => {
 });
 
 // Modal Logic
+window.closeModernChartModal = function() {
+  const modal = $('chartModal');
+  if (modal) modal.classList.remove('open');
+};
+
+window.disableLiquidFilter = function() {
+  const chk = $('chkLiquid');
+  if (chk) chk.checked = false;
+  renderTabs();
+  renderTable();
+};
+
 window.openModernChart = function(symbol) {
   selectedStock = symbol;
-  $('heroChartSym').textContent = `মর্ডান চার্ট (${symbol})`;
+  if ($('heroChartSym')) $('heroChartSym').textContent = `মর্ডান চার্ট (${symbol})`;
   $('modalStockTitle').innerHTML = `${esc(symbol)} <span class="badge-tag" style="background:#dbeafe;color:#1e40af" id="modalStockSector">Bank</span>`;
-  $('modalStockSelect').value = symbol;
+  if ($('modalStockSearchInput')) $('modalStockSearchInput').value = symbol;
 
   const stock = (DATA && DATA.stocks) ? DATA.stocks.find(s => s.c === symbol) : null;
   if (stock) {
     $('modalStockSector').textContent = stock.s || 'General';
-    $('modalStockSub').textContent = `সর্বশেষ ক্লোজ: ৳${stock.cl != null ? stock.cl.toFixed(1) : '–'} | পরিবর্তন: ${stock.ch > 0 ? '+' : ''}${stock.ch != null ? stock.ch.toFixed(1) : 0}% | ফেজ: ${stock.p} | ক্যাটাগরি: ${stock.cat || 'A'}`;
-
+    const phaseStr = stock.p ? stock.p : 'আর্লি স্টিলথ';
+    $('modalStockSub').textContent = `সর্বশেষ ক্লোজ: ৳${stock.cl != null ? stock.cl.toFixed(1) : '–'} | পরিবর্তন: ${stock.ch > 0 ? '+' : ''}${stock.ch != null ? stock.ch.toFixed(1) : 0}% | ফেজ: ${phaseStr} | ক্যাটাগরি: ${stock.cat || 'A'}`;
     $('modalStatsStrip').innerHTML = `
       <div><span>LTP (সর্বশেষ দর)</span><b>৳${stock.cl != null ? stock.cl.toFixed(1) : '–'}</b></div>
+      <div id="stripPocVal"><span>📍 POC (পয়েন্ট অব কন্ট্রোল)</span><b style="color:#f59e0b">হিসাব হচ্ছে...</b></div>
       <div><span>আজকের ভলিউম</span><b>${stock.v ? (stock.v > 1000000 ? (stock.v/1000000).toFixed(2)+'M' : (stock.v/1000).toFixed(0)+'K') : '–'}</b></div>
       <div><span>ভলিউম রেশিও (VR)</span><b style="color:${stock.vr>=2.5?'var(--up)':'inherit'}">${stock.vr != null ? stock.vr.toFixed(2) : '–'}</b></div>
       <div><span>প্রেসার স্কোর</span><b style="color:${stock.pst==='buy'?'var(--up)':(stock.pst==='sell'?'var(--down)':'inherit')}">${stock.pscore != null ? stock.pscore.toFixed(1) : '50.0'} (${stock.pst==='buy'?'বাইং':'সেলিং'})</b></div>
       <div><span>Paid-up মূলধন</span><b>৳${stock.pu ? stock.pu.toFixed(1)+' কোটি' : '–'}</b></div>
-      <div><span>P/E অনুপাত</span><b>${stock.pe ? stock.pe.toFixed(1) : '–'}</b></div>
     `;
+  }
+
+  // Populate Quick Chips for current active stocks
+  const quickContainer = $('modalQuickChips');
+  if (quickContainer && DATA && DATA.stocks) {
+    const popularSymbols = ['ARAMIT', 'ISLAMIINS', 'ANWARGALV', 'PROVATIINS', 'PARAMOUNT', 'JUTESPINN', 'SINOBANGLA'];
+    quickContainer.innerHTML = popularSymbols.map(sym => {
+      const activeCls = sym === symbol ? ' active' : '';
+      return `<button class="modal-quick-chip${activeCls}" onclick="openModernChart('${sym}')">${sym}</button>`;
+    }).join('');
   }
 
   $('chartModal').classList.add('open');
   renderCandlestickChart(symbol, chartPeriodDays);
 };
+
+function initModalSearch() {
+  const input = $('modalStockSearchInput');
+  const dropdown = $('modalStockSearchDropdown');
+  if (!input || !dropdown) return;
+
+  function renderSearchList(query = '') {
+    if (!DATA || !DATA.stocks) return;
+    const q = query.trim().toUpperCase();
+    const matches = DATA.stocks.filter(s => s.c.toUpperCase().includes(q) || (s.s && s.s.toUpperCase().includes(q))).slice(0, 15);
+
+    if (!matches.length) {
+      dropdown.innerHTML = '<div style="padding:10px;text-align:center;color:var(--muted);font-size:12px">কোনো স্টক মেলেনি</div>';
+      dropdown.style.display = 'block';
+      return;
+    }
+
+    dropdown.innerHTML = matches.map(s => `
+      <div class="modal-search-item" onclick="openModernChart('${esc(s.c)}'); $('modalStockSearchDropdown').style.display='none';">
+        <div>
+          <b>${esc(s.c)}</b>
+          <span style="font-size:10px;color:var(--muted);margin-left:4px">${esc(s.s || '')}</span>
+        </div>
+        <div style="font-family:var(--font-mono);font-weight:600">
+          ৳${s.cl != null ? s.cl.toFixed(1) : '–'}
+          <span style="font-size:11px;color:${(s.ch||0)>=0?'var(--up)':'var(--down)'}">
+            ${(s.ch||0)>=0?'+':''}${(s.ch||0).toFixed(1)}%
+          </span>
+        </div>
+      </div>
+    `).join('');
+    dropdown.style.display = 'block';
+  }
+
+  input.addEventListener('focus', () => renderSearchList(input.value));
+  input.addEventListener('input', (e) => renderSearchList(e.target.value));
+
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.modal-search-box-wrap')) {
+      dropdown.style.display = 'none';
+    }
+  });
+}
 
 $('btnCloseModal').addEventListener('click', () => {
   $('chartModal').classList.remove('open');
@@ -2294,13 +2550,33 @@ function updateVolumeAnalysisInfo(symbol, candleIdx = null) {
 
   const fmtVol = (v) => v > 1000000 ? (v/1000000).toFixed(2)+'M' : (v/1000).toFixed(0)+'K';
 
+    const pMin = Math.min(...data.map(d => d.low)), pMax = Math.max(...data.map(d => d.high));
+  const pRang = (pMax - pMin) || 1;
+  const nBins = 24, bSize = pRang / nBins;
+  const vProf = new Array(nBins).fill(0);
+  data.forEach(d => {
+    const bi = Math.min(nBins - 1, Math.max(0, Math.floor((d.close - pMin) / bSize)));
+    vProf[bi] += (d.vol || 0);
+  });
+  let mBi = 0;
+  for (let b = 1; b < nBins; b++) if (vProf[b] > vProf[mBi]) mBi = b;
+  const currentPoc = pMin + (mBi + 0.5) * bSize;
+  const pocRelation = cur.close >= currentPoc 
+    ? '<span style="color:#10b981;font-weight:700">বুলিশ সাপোর্ট (দর POC-এর ওপরে)</span>'
+    : '<span style="color:#ef4444;font-weight:700">রেজিস্ট্যান্স জোন (দর POC-এর নিচে)</span>';
+
   $('volGridMetrics').innerHTML = `
     <div class="vol-metric-box"><span>দিনের ভলিউম</span><b>${fmtVol(cur.vol)}</b></div>
     <div class="vol-metric-box"><span>২০ দিনের গড় ভলিউম</span><b>${fmtVol(avgVol)}</b></div>
     <div class="vol-metric-box"><span>ভলিউম রেশিও (VR)</span><b style="color:${volRatio>=2?'#10b981':'inherit'}">${volRatio}x</b></div>
-    <div class="vol-metric-box"><span>ক্যান্ডেল স্প্রেড</span><b>৳${spread.toFixed(1)} (${chgPct}%)</b></div>
+    <div class="vol-metric-box"><span style="color:#f59e0b">📍 POC প্রাইস</span><b style="color:#f59e0b">৳${currentPoc.toFixed(1)}</b></div>
   `;
-  $('volVsaCommentary').innerHTML = `💡 <b>VSA ইনসাইট:</b> ${commentary}`;
+  $('volVsaCommentary').innerHTML = `
+    <div style="margin-bottom:4px">💡 <b>VSA ইনসাইট:</b> ${commentary}</div>
+    <div style="font-size:11.5px;color:var(--muted);border-top:1px dashed var(--line);padding-top:4px;margin-top:4px">
+      📍 <b>Point of Control (POC): ৳${currentPoc.toFixed(1)}</b> — এই টাইমফ্রেমে সবচেয়ে বেশি শেয়ার লেনদেন হওয়া হেভি লেভেল। অবস্থা: ${pocRelation}।
+    </div>
+  `;
 }
 
 // Modern Vibrant Candlestick Chart Renderer (SVG) with Interactive Crosshairs & Volume
@@ -2371,6 +2647,29 @@ function renderCandlestickChart(symbol, days) {
     if (d.high > peakHigh) { peakHigh = d.high; peakHighIdx = i; }
     if (d.low < troughLow) { troughLow = d.low; troughLowIdx = i; }
   });
+
+  
+  // Compute Point of Control (POC)
+  const numBins = 28;
+  const binSize = pRange / numBins;
+  const volProfile = new Array(numBins).fill(0);
+
+  data.forEach(d => {
+    const binIdx = Math.min(numBins - 1, Math.max(0, Math.floor((d.close - minP) / binSize)));
+    volProfile[binIdx] += (d.vol || 0);
+  });
+
+  let maxBinIdx = 0;
+  for (let b = 1; b < numBins; b++) {
+    if (volProfile[b] > volProfile[maxBinIdx]) maxBinIdx = b;
+  }
+  const pocPrice = minP + (maxBinIdx + 0.5) * binSize;
+  const pocY = padT + candleH - ((pocPrice - minP) / pRange) * candleH;
+
+  const stripPoc = $('stripPocVal');
+  if (stripPoc) {
+    stripPoc.innerHTML = `<span>📍 POC (পয়েন্ট অব কন্ট্রোল)</span><b style="color:#f59e0b">৳${pocPrice.toFixed(1)}</b>`;
+  }
 
   const candleW = Math.max(3.5, Math.min(18, (plotW / data.length) * 0.72));
 
@@ -2451,6 +2750,16 @@ function renderCandlestickChart(symbol, days) {
       volSmaPts.push(`${x.toFixed(1)},${yVolSma.toFixed(1)}`);
     }
   });
+
+  
+  // Point of Control (POC) Line & Axis Tag
+  if (pocY >= padT && pocY <= padT + candleH) {
+    svg += `<line x1="${padL}" y1="${pocY}" x2="${W - padR}" y2="${pocY}" stroke="#f59e0b" stroke-width="2" stroke-dasharray="6,3" opacity="0.95" />`;
+    svg += `<g transform="translate(${W - padR + 4}, ${pocY - 9})">
+      <rect width="60" height="18" rx="4" fill="#f59e0b" />
+      <text x="30" y="12.5" fill="#000" font-size="9px" font-weight="800" text-anchor="middle">POC ৳${pocPrice.toFixed(1)}</text>
+    </g>`;
+  }
 
   // Plot Smooth SMA Curves
   if (sma20Pts.length > 1) {
