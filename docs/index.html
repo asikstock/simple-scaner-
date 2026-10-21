@@ -739,6 +739,111 @@
       border-color: var(--accent);
     }
 
+    
+    /* Volume Analysis & Vibrant Chart Styles */
+    .btn-vol-analysis {
+      background: linear-gradient(135deg, #0284c7, #2563eb) !important;
+      color: #fff !important;
+      border: 1px solid #0369a1 !important;
+      font-weight: 700 !important;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      height: 28px;
+      padding: 2px 10px;
+      font-size: 11.5px;
+      border-radius: 6px;
+      cursor: pointer;
+      box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
+      transition: all 0.2s;
+    }
+    .btn-vol-analysis:hover, .btn-vol-analysis.active {
+      background: linear-gradient(135deg, #0369a1, #1d4ed8) !important;
+      box-shadow: 0 0 10px rgba(37, 99, 235, 0.4);
+    }
+    .vol-pulse-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #10b981;
+      display: inline-block;
+      box-shadow: 0 0 8px #10b981;
+    }
+    .volume-analysis-card {
+      background: linear-gradient(135deg, rgba(2, 132, 199, 0.04), rgba(37, 99, 235, 0.08));
+      border: 1px solid rgba(2, 132, 199, 0.25);
+      border-radius: 12px;
+      padding: 12px 16px;
+      margin-bottom: 12px;
+      animation: fadeIn 0.3s ease;
+    }
+    .vol-panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      font-size: 13px;
+    }
+    .vsa-badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      background: #10b981;
+      color: #fff;
+      box-shadow: 0 2px 6px rgba(16, 185, 129, 0.25);
+    }
+    .vol-grid-metrics {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .vol-metric-box {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 6px 10px;
+      font-size: 11px;
+      line-height: 1.4;
+    }
+    .vol-metric-box span {
+      color: var(--muted);
+      display: block;
+      font-size: 10px;
+    }
+    .vol-metric-box b {
+      font-family: var(--font-mono);
+      font-size: 12.5px;
+      color: var(--text);
+    }
+    .vol-vsa-commentary {
+      font-size: 12px;
+      color: var(--text);
+      line-height: 1.45;
+      background: var(--card);
+      border: 1px dashed rgba(2, 132, 199, 0.3);
+      border-radius: 8px;
+      padding: 8px 12px;
+    }
+    .chart-tooltip-box {
+      position: absolute;
+      pointer-events: none;
+      background: rgba(15, 23, 42, 0.92);
+      color: #fff;
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+      z-index: 100;
+      display: none;
+      white-space: nowrap;
+    }
+
     .empty-state {
       padding: 48px 16px;
       text-align: center;
@@ -1261,20 +1366,41 @@
     <div class="modal-body">
       <div class="chart-stats-strip" id="modalStatsStrip"></div>
       <div class="chart-controls">
-        <div style="display:flex;gap:6px">
+        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
           <button class="btn" style="height:28px;padding:2px 10px;font-size:11.5px" data-period="30">১ মাস</button>
           <button class="btn primary" style="height:28px;padding:2px 10px;font-size:11.5px" data-period="90">৩ মাস</button>
           <button class="btn" style="height:28px;padding:2px 10px;font-size:11.5px" data-period="180">৬ মাস</button>
           <button class="btn" style="height:28px;padding:2px 10px;font-size:11.5px" data-period="365">১ বছর</button>
+          <button class="btn-vol-analysis" id="btnToggleVolAnalysis" onclick="toggleVolumeAnalysis()">
+            <span>📊</span> <span>ভলিউম অ্যানালাইসিস</span>
+          </button>
         </div>
-        <div style="display:flex;align-items:center;gap:14px;font-size:12px;color:var(--muted)">
-          <span><i style="display:inline-block;width:12px;height:2px;background:var(--sma20);margin-right:4px;vertical-align:middle"></i>SMA 20</span>
-          <span><i style="display:inline-block;width:12px;height:2px;background:var(--sma50);margin-right:4px;vertical-align:middle"></i>SMA 50</span>
-          <span><i style="display:inline-block;width:8px;height:8px;background:var(--up);border-radius:2px;margin-right:4px;vertical-align:middle"></i>বুলিশ ক্যান্ডেল</span>
-          <span><i style="display:inline-block;width:8px;height:8px;background:var(--down);border-radius:2px;margin-right:4px;vertical-align:middle"></i>বেয়ারিশ ক্যান্ডেল</span>
+        <div style="display:flex;align-items:center;gap:12px;font-size:11.5px;color:var(--muted);flex-wrap:wrap">
+          <span><i style="display:inline-block;width:12px;height:2px;background:#f59e0b;margin-right:4px;vertical-align:middle"></i>SMA 20</span>
+          <span><i style="display:inline-block;width:12px;height:2px;background:#06b6d4;margin-right:4px;vertical-align:middle"></i>SMA 50</span>
+          <span><i style="display:inline-block;width:12px;height:2px;background:#3b82f6;border-top:1px dashed #3b82f6;margin-right:4px;vertical-align:middle"></i>ভলিউম 20-MA</span>
+          <span><i style="display:inline-block;width:8px;height:8px;background:#10b981;border-radius:2px;margin-right:4px;vertical-align:middle"></i>বুলিশ</span>
+          <span><i style="display:inline-block;width:8px;height:8px;background:#ef4444;border-radius:2px;margin-right:4px;vertical-align:middle"></i>বেয়ারিশ</span>
         </div>
       </div>
-      <div id="chartSvgContainer" style="width:100%;height:440px;position:relative"></div>
+
+      <!-- Volume Analysis Live Panel -->
+      <div id="volumeAnalysisPanel" class="volume-analysis-card" style="display:none">
+        <div class="vol-panel-header">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span class="vol-pulse-dot"></span>
+            <b>স্মার্ট মানি ভলিউম স্প্রেড অ্যানালাইসিস (VSA)</b>
+            <span style="font-size:11px;color:var(--muted)" id="volSelectedDate"></span>
+          </div>
+          <span id="vsaSignalBadge" class="vsa-badge">অস্বাভাবিক একুমুলেশন</span>
+        </div>
+        <div class="vol-grid-metrics" id="volGridMetrics"></div>
+        <div class="vol-vsa-commentary" id="volVsaCommentary"></div>
+      </div>
+
+      <div id="chartSvgContainer" style="width:100%;height:440px;position:relative;background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden">
+        <div id="chartTooltip" class="chart-tooltip-box"></div>
+      </div>
     </div>
   </div>
 </div>
@@ -1315,7 +1441,7 @@ let DATA = null;
 let PRICES_MAP = {};
 let BT = null;
 let PB = null;
-let currentTab = '__setup';
+let currentTab = localStorage.getItem('dse_last_tab') || '__booming';
 let sortCol = 'rr';
 let sortAsc = false;
 let selectedStock = 'MERCANBANK';
@@ -1634,6 +1760,19 @@ function renderKpis() {
   $('kpiPressure').textContent = `${buyPressure}টি বাইং বনাম ${sellPressure}টি সেলিং`;
 }
 
+
+window.setTab = function(tabKey) {
+  currentTab = tabKey;
+  try { localStorage.setItem('dse_last_tab', currentTab); } catch(e){}
+  const cfg = TABS_CONFIG.find(t => t.k === tabKey);
+  if (cfg) {
+    if ($('contextTitle')) $('contextTitle').textContent = cfg.title;
+    if ($('contextDesc')) $('contextDesc').textContent = cfg.desc;
+  }
+  renderTabs();
+  renderTable();
+};
+
 function renderTabs() {
   if (!DATA || !DATA.stocks) return;
   const isLiquidOnly = $('chkLiquid').checked;
@@ -1656,6 +1795,7 @@ function renderTabs() {
     btn.innerHTML = `${esc(cfg.label)} <span class="pill-count">${cnt}</span>`;
     btn.onclick = () => {
       currentTab = cfg.k;
+      try { localStorage.setItem('dse_last_tab', currentTab); } catch(e){}
       $('contextTitle').textContent = cfg.title;
       $('contextDesc').textContent = cfg.desc;
       renderTabs();
@@ -1753,7 +1893,25 @@ function renderTable() {
 
   const tbody = $('scanTbody');
   if (!list.length) {
-    tbody.innerHTML = `<tr><td colspan="11" class="empty-state">কোনো স্টক পাওয়া যায়নি। অনুসন্ধান ফিল্টার পরিবর্তন করুন।</td></tr>`;
+    tbody.innerHTML = `<tr>
+      <td colspan="11" class="empty-state" style="padding:36px 16px;text-align:center">
+        <div style="width:44px;height:44px;margin:0 auto 10px;border-radius:12px;background:rgba(2,132,199,0.1);color:#0284c7;display:flex;align-items:center;justify-content:center;font-size:20px">
+          🔍
+        </div>
+        <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:6px">
+          বর্তমান ফিল্টারে এই মুহূর্তে কোনো স্টক মেলেনি
+        </div>
+        <div style="font-size:12px;color:var(--muted);max-width:440px;margin:0 auto 14px;line-height:1.5">
+          ${isLiquidOnly ? 'লিকুইড শেয়ার (≥ ৩০ লাখ লেনদেন) ফিল্টার অন থাকায় অনেক শেয়ার বাদ পড়েছে।' : 'অনুসন্ধান ফিল্টার পরিবর্তন করুন বা অন্য ট্যাবে দেখুন।'}
+        </div>
+        <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
+          <button class="btn primary" onclick="setTab('__booming')" style="padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer">
+            🚀 বুমিং অপারেটর স্টিলথ দেখুন
+          </button>
+          ${isLiquidOnly ? '<button class="btn" onclick="$(\'chkLiquid\').checked = false; renderTabs(); renderTable();" style="padding:6px 14px;font-size:12px;cursor:pointer">সব শেয়ার আনলক করুন (লিকুইড ফিল্টার অফ)</button>' : ''}
+        </div>
+      </td>
+    </tr>`;
     return;
   }
 
@@ -2052,17 +2210,110 @@ document.querySelectorAll('[data-period]').forEach(btn => {
 });
 
 // Candlestick Chart Renderer (SVG)
+let isVolAnalysisOpen = false;
+let selectedCandleIndex = null;
+
+window.toggleVolumeAnalysis = function() {
+  isVolAnalysisOpen = !isVolAnalysisOpen;
+  const panel = $('volumeAnalysisPanel');
+  const btn = $('btnToggleVolAnalysis');
+  if (panel) panel.style.display = isVolAnalysisOpen ? 'block' : 'none';
+  if (btn) btn.classList.toggle('active', isVolAnalysisOpen);
+  if (isVolAnalysisOpen && selectedStock) {
+    updateVolumeAnalysisInfo(selectedStock, selectedCandleIndex);
+  }
+};
+
+function updateVolumeAnalysisInfo(symbol, candleIdx = null) {
+  const panel = $('volumeAnalysisPanel');
+  if (!panel) return;
+
+  let rawData = PRICES_MAP[symbol] || [];
+  if (!rawData.length && DATA && DATA.stocks) {
+    const s = DATA.stocks.find(st => st.c === symbol);
+    if (s && s.sp && s.sp.length) {
+      rawData = s.sp.map((c, i) => ({
+        date: `Day -${s.sp.length - i}`,
+        open: c * 0.995, high: c * 1.015, low: c * 0.985, close: c,
+        vol: s.v || 50000
+      }));
+    }
+  }
+
+  const data = rawData.slice(-chartPeriodDays);
+  if (!data.length) return;
+
+  const targetIdx = (candleIdx != null && candleIdx >= 0 && candleIdx < data.length) ? candleIdx : (data.length - 1);
+  const cur = data[targetIdx];
+
+  // Calculate 20-day Volume Moving Average
+  let volSum = 0, count = 0;
+  for (let j = Math.max(0, targetIdx - 19); j <= targetIdx; j++) {
+    volSum += data[j].vol;
+    count++;
+  }
+  const avgVol = count > 0 ? (volSum / count) : (cur.vol || 1);
+  const volRatio = (avgVol > 0 ? (cur.vol / avgVol) : 1).toFixed(2);
+  const chgPct = cur.open > 0 ? (((cur.close - cur.open) / cur.open) * 100).toFixed(2) : 0;
+  const spread = Math.abs(cur.high - cur.low);
+  const body = Math.abs(cur.close - cur.open);
+
+  let vsaBadge = 'সাধারণ লেনদেন (Neutral)';
+  let vsaColor = '#64748b';
+  let commentary = '';
+
+  if (volRatio >= 2.2 && body < spread * 0.35) {
+    vsaBadge = '🔥 উচ্চ স্টিলথ শোষণ (Absorption / Base)';
+    vsaColor = '#7c3aed';
+    commentary = 'অস্বাভাবিক উচ্চ ভলিউমেও ক্যান্ডেল বডি ছোট — অপারেটর দাম চেপে রেখে রিটেইল সাপ্লাই নিঃশব্দে গিলে নিচ্ছে (Wyckoff Absorption)। রিভার্সালের সম্ভাবনা প্রবল।';
+  } else if (volRatio >= 2.0 && cur.close > cur.open && chgPct > 2.0) {
+    vsaBadge = '🚀 সাইন অফ স্ট্রেন্থ (SOS Breakout)';
+    vsaColor = '#10b981';
+    commentary = 'ব্যাপক ভলিউমে বড় বুলিশ ক্যান্ডেল (Effort vs Result পজিটিভ)। অপারেটর দাম উপরে টেনে নিচ্ছে, এটি শক্তিশালী ব্রেকআউটের লক্ষণ।';
+  } else if (volRatio < 0.65 && Math.abs(chgPct) < 1.0) {
+    vsaBadge = '💧 ভলিউম ড্রাই-আপ (Supply Dried / Test)';
+    vsaColor = '#0284c7';
+    commentary = 'বাজারে বিক্রেতার চাপ সম্পূর্ণ শুকিয়ে গেছে (Low Volume Test)। সাপোর্টে এই ধরনের ড্রাই-আপ বড় আপ-মুভের প্রস্তুতি নির্দেশ করে।';
+  } else if (volRatio >= 2.5 && cur.close < cur.open) {
+    vsaBadge = '⚠️ ক্লাইম্যাক্স / সেলিং প্রেসার (Distribution Trap)';
+    vsaColor = '#ef4444';
+    commentary = 'অতিরিক্ত ভলিউমে বড় লাল ক্যান্ডেল বা পিকের পর সেলিং ক্লাইম্যাক্স। স্মার্ট মানি মাল ছেড়ে দেওয়ার লক্ষণ, নতুন বাই এড়িয়ে চলুন।';
+  } else if (cur.close > cur.open) {
+    vsaBadge = '🟢 বায়ার ডমিনেন্স (Demand in Control)';
+    vsaColor = '#10b981';
+    commentary = 'ক্রেতার উপস্থিতি বিক্রেতার চেয়ে বেশি। স্বাভাবিক ভলিউমে ঊর্ধ্বমুখী ধারা বজায় রয়েছে।';
+  } else {
+    vsaBadge = '🔴 কারেকশন / রিটেইল প্রফিট টেকিং';
+    vsaColor = '#f59e0b';
+    commentary = 'স্বাভাবিক প্রফিট বুকিং চলছে। ২০ SMA সাপোর্টে রিটেস্ট করছে কি না লক্ষ্য রাখুন।';
+  }
+
+  $('vsaSignalBadge').textContent = vsaBadge;
+  $('vsaSignalBadge').style.background = vsaColor;
+  $('volSelectedDate').textContent = `[তারিখ: ${cur.date || 'আজ'}]`;
+
+  const fmtVol = (v) => v > 1000000 ? (v/1000000).toFixed(2)+'M' : (v/1000).toFixed(0)+'K';
+
+  $('volGridMetrics').innerHTML = `
+    <div class="vol-metric-box"><span>দিনের ভলিউম</span><b>${fmtVol(cur.vol)}</b></div>
+    <div class="vol-metric-box"><span>২০ দিনের গড় ভলিউম</span><b>${fmtVol(avgVol)}</b></div>
+    <div class="vol-metric-box"><span>ভলিউম রেশিও (VR)</span><b style="color:${volRatio>=2?'#10b981':'inherit'}">${volRatio}x</b></div>
+    <div class="vol-metric-box"><span>ক্যান্ডেল স্প্রেড</span><b>৳${spread.toFixed(1)} (${chgPct}%)</b></div>
+  `;
+  $('volVsaCommentary').innerHTML = `💡 <b>VSA ইনসাইট:</b> ${commentary}`;
+}
+
+// Modern Vibrant Candlestick Chart Renderer (SVG) with Interactive Crosshairs & Volume
 function renderCandlestickChart(symbol, days) {
   const container = $('chartSvgContainer');
   let rawData = PRICES_MAP[symbol] || [];
-
   if (!rawData.length && DATA && DATA.stocks) {
     const s = DATA.stocks.find(st => st.c === symbol);
     if (s && s.sp && s.sp.length) {
       rawData = s.sp.map((c, i) => {
-        const spread = c * 0.015;
+        const spread = c * 0.018;
         return {
-          date: `Day -${s.sp.length - i}`,
+          date: `দিন ${i + 1}`,
           open: c * (1 + (Math.sin(i) * 0.008)),
           high: c + spread,
           low: c - spread,
@@ -2075,75 +2326,116 @@ function renderCandlestickChart(symbol, days) {
 
   const data = rawData.slice(-days);
   if (data.length < 2) {
-    container.innerHTML = `<div class="empty-state">এই কোম্পানির চার্ট ডেটা প্রস্তুত হচ্ছে...</div>`;
+    container.innerHTML = `<div class="empty-state" style="padding:40px;text-align:center">এই কোম্পানির হিস্টোরিক্যাল চার্ট ডেটা প্রস্তুত হচ্ছে...</div>`;
     return;
   }
 
-  // Calculate SMA 20 & SMA 50
+  // Calculate Price SMAs & Volume 20-MA
   for (let i = 0; i < data.length; i++) {
     if (i >= 19) {
-      let sum = 0;
-      for (let j = i - 19; j <= i; j++) sum += data[j].close;
-      data[i].sma20 = sum / 20;
-    } else data[i].sma20 = null;
+      let pSum = 0, vSum = 0;
+      for (let j = i - 19; j <= i; j++) {
+        pSum += data[j].close;
+        vSum += data[j].vol;
+      }
+      data[i].sma20 = pSum / 20;
+      data[i].volSma20 = vSum / 20;
+    } else {
+      data[i].sma20 = null;
+      data[i].volSma20 = null;
+    }
 
     if (i >= 49) {
-      let sum = 0;
-      for (let j = i - 49; j <= i; j++) sum += data[j].close;
-      data[i].sma50 = sum / 50;
+      let pSum50 = 0;
+      for (let j = i - 49; j <= i; j++) pSum50 += data[j].close;
+      data[i].sma50 = pSum50 / 50;
     } else data[i].sma50 = null;
   }
 
   const W = container.clientWidth || 980;
   const H = 440;
-  const candleH = 300;
-  const volH = 80;
-  const volTop = 340;
-  const padL = 10, padR = 60, padT = 20;
+  const candleH = 280;
+  const volH = 85;
+  const volTop = 330;
+  const padL = 12, padR = 64, padT = 24;
   const plotW = W - padL - padR;
 
   const minP = Math.min(...data.map(d => d.low)) * 0.985;
   const maxP = Math.max(...data.map(d => d.high)) * 1.015;
   const pRange = (maxP - minP) || 1;
   const maxVol = Math.max(...data.map(d => d.vol)) || 1;
-  const candleW = Math.max(3, Math.min(18, (plotW / data.length) * 0.75));
 
-  let svg = `<svg width="100%" height="${H}" viewBox="0 0 ${W} ${H}" style="font-family:var(--font-mono);font-size:10.5px">`;
+  let peakHigh = -1, peakHighIdx = -1;
+  let troughLow = 999999, troughLowIdx = -1;
+  data.forEach((d, i) => {
+    if (d.high > peakHigh) { peakHigh = d.high; peakHighIdx = i; }
+    if (d.low < troughLow) { troughLow = d.low; troughLowIdx = i; }
+  });
 
-  // Grid lines
+  const candleW = Math.max(3.5, Math.min(18, (plotW / data.length) * 0.72));
+
+  let svg = `<svg id="candleSvgElement" width="100%" height="${H}" viewBox="0 0 ${W} ${H}" style="font-family:var(--font-mono);font-size:10.5px;display:block;cursor:crosshair">
+    <defs>
+      <linearGradient id="volGrad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.7"/>
+        <stop offset="100%" stop-color="#1d4ed8" stop-opacity="0.2"/>
+      </linearGradient>
+      <linearGradient id="bullGrad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#10b981"/>
+        <stop offset="100%" stop-color="#059669"/>
+      </linearGradient>
+      <linearGradient id="bearGrad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#ef4444"/>
+        <stop offset="100%" stop-color="#dc2626"/>
+      </linearGradient>
+      <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+        <feGaussianBlur stdDeviation="2" result="blur" />
+        <feComposite in="SourceGraphic" in2="blur" operator="over" />
+      </filter>
+    </defs>`;
+
+  // Background Grid Lines
   for (let i = 0; i <= 5; i++) {
     const yVal = minP + (pRange * (i / 5));
     const yPix = padT + candleH - ((yVal - minP) / pRange) * candleH;
-    svg += `<line x1="${padL}" y1="${yPix}" x2="${W - padR}" y2="${yPix}" stroke="var(--line)" stroke-dasharray="3,3" />`;
-    svg += `<text x="${W - padR + 8}" y="${yPix + 3}" fill="var(--muted)">৳${yVal.toFixed(1)}</text>`;
+    svg += `<line x1="${padL}" y1="${yPix}" x2="${W - padR}" y2="${yPix}" stroke="rgba(148,163,184,0.18)" stroke-dasharray="3,3" />`;
+    svg += `<text x="${W - padR + 8}" y="${yPix + 3}" fill="var(--muted)" font-weight="600">৳${yVal.toFixed(1)}</text>`;
   }
 
-  // Candles & Volume
+  // Volume Separator line
+  svg += `<line x1="${padL}" y1="${volTop - 8}" x2="${W - padR}" y2="${volTop - 8}" stroke="rgba(148,163,184,0.25)" />`;
+  svg += `<text x="${padL + 4}" y="${volTop + 14}" fill="var(--muted)" font-size="9.5px" font-weight="700">ভলিউম (VOLUME)</text>`;
+
+  // Candles, Volumes, and SMA coordinates
   let sma20Pts = [];
   let sma50Pts = [];
+  let volSmaPts = [];
 
   data.forEach((d, i) => {
     const x = padL + (i / (data.length - 1)) * plotW;
     const isUp = d.close >= d.open;
-    const color = isUp ? 'var(--up)' : 'var(--down)';
+    const color = isUp ? '#10b981' : '#ef4444';
+    const fillGrad = isUp ? 'url(#bullGrad)' : 'url(#bearGrad)';
 
     const yOpen = padT + candleH - ((d.open - minP) / pRange) * candleH;
     const yClose = padT + candleH - ((d.close - minP) / pRange) * candleH;
     const yHigh = padT + candleH - ((d.high - minP) / pRange) * candleH;
     const yLow = padT + candleH - ((d.low - minP) / pRange) * candleH;
-
     const bodyY = Math.min(yOpen, yClose);
     const bodyH = Math.max(2, Math.abs(yOpen - yClose));
 
     // High-Low Wick
-    svg += `<line x1="${x}" y1="${yHigh}" x2="${x}" y2="${yLow}" stroke="${color}" stroke-width="1.2" />`;
-    // Body
-    svg += `<rect x="${x - candleW/2}" y="${bodyY}" width="${candleW}" height="${bodyH}" fill="${color}" rx="1" />`;
+    svg += `<line x1="${x}" y1="${yHigh}" x2="${x}" y2="${yLow}" stroke="${color}" stroke-width="1.3" opacity="0.9" />`;
 
-    // Volume bar
-    const vBarH = (d.vol / maxVol) * volH;
+    // Candlestick Body
+    svg += `<rect x="${x - candleW/2}" y="${bodyY}" width="${candleW}" height="${bodyH}" fill="${fillGrad}" rx="1.5" />`;
+
+    // Volume Bar
+    const vBarH = Math.max(2, (d.vol / maxVol) * volH);
     const vY = volTop + volH - vBarH;
-    svg += `<rect x="${x - candleW/2}" y="${vY}" width="${candleW}" height="${vBarH}" fill="${color}" opacity="0.6" />`;
+    const isVolSpike = d.volSma20 && (d.vol >= d.volSma20 * 2.0);
+    const vColor = isVolSpike ? '#f59e0b' : color;
+    svg += `<rect x="${x - candleW/2}" y="${vY}" width="${candleW}" height="${vBarH}" fill="${vColor}" opacity="${isVolSpike ? '0.9' : '0.65'}" rx="1" />`;
 
     // SMAs
     if (d.sma20) {
@@ -2154,22 +2446,131 @@ function renderCandlestickChart(symbol, days) {
       const ySma50 = padT + candleH - ((d.sma50 - minP) / pRange) * candleH;
       sma50Pts.push(`${x.toFixed(1)},${ySma50.toFixed(1)}`);
     }
+    if (d.volSma20) {
+      const yVolSma = volTop + volH - Math.max(2, (d.volSma20 / maxVol) * volH);
+      volSmaPts.push(`${x.toFixed(1)},${yVolSma.toFixed(1)}`);
+    }
   });
 
-  // Draw SMA Lines
+  // Plot Smooth SMA Curves
   if (sma20Pts.length > 1) {
-    svg += `<polyline fill="none" stroke="var(--sma20)" stroke-width="1.8" points="${sma20Pts.join(' ')}" />`;
+    svg += `<polyline fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" points="${sma20Pts.join(' ')}" />`;
   }
   if (sma50Pts.length > 1) {
-    svg += `<polyline fill="none" stroke="var(--sma50)" stroke-width="1.8" points="${sma50Pts.join(' ')}" />`;
+    svg += `<polyline fill="none" stroke="#06b6d4" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" points="${sma50Pts.join(' ')}" />`;
+  }
+  if (volSmaPts.length > 1) {
+    svg += `<polyline fill="none" stroke="#3b82f6" stroke-width="1.6" stroke-dasharray="4,2" points="${volSmaPts.join(' ')}" />`;
   }
 
-  // Volume Separator line
-  svg += `<line x1="${padL}" y1="${volTop}" x2="${W - padR}" y2="${volTop}" stroke="var(--line)" />`;
-  svg += `<text x="${padL}" y="${volTop - 6}" fill="var(--muted)">ভলিউম (বার)</text>`;
+  // Peak High and Low Badges
+  if (peakHighIdx >= 0) {
+    const px = padL + (peakHighIdx / (data.length - 1)) * plotW;
+    const py = padT + candleH - ((peakHigh - minP) / pRange) * candleH;
+    svg += `<g transform="translate(${Math.min(W - padR - 70, Math.max(padL + 10, px - 35))}, ${Math.max(padT - 6, py - 20)})">
+      <rect width="70" height="16" rx="4" fill="#0f172a" opacity="0.85" />
+      <text x="35" y="11.5" fill="#10b981" font-size="9px" font-weight="700" text-anchor="middle">সর্বোচ্চ ৳${peakHigh.toFixed(1)}</text>
+    </g>`;
+  }
+
+  if (troughLowIdx >= 0) {
+    const lx = padL + (troughLowIdx / (data.length - 1)) * plotW;
+    const ly = padT + candleH - ((troughLow - minP) / pRange) * candleH;
+    svg += `<g transform="translate(${Math.min(W - padR - 70, Math.max(padL + 10, lx - 35))}, ${Math.min(volTop - 26, ly + 6)})">
+      <rect width="70" height="16" rx="4" fill="#0f172a" opacity="0.85" />
+      <text x="35" y="11.5" fill="#ef4444" font-size="9px" font-weight="700" text-anchor="middle">সর্বনিম্ন ৳${troughLow.toFixed(1)}</text>
+    </g>`;
+  }
+
+  // Crosshair Elements
+  svg += `<line id="crosshairX" x1="0" y1="0" x2="0" y2="${H}" stroke="rgba(255,255,255,0.4)" stroke-dasharray="2,2" style="display:none" />`;
+  svg += `<line id="crosshairY" x1="${padL}" y1="0" x2="${W - padR}" y2="0" stroke="rgba(255,255,255,0.4)" stroke-dasharray="2,2" style="display:none" />`;
 
   svg += `</svg>`;
-  container.innerHTML = svg;
+  container.innerHTML = svg + `<div id="chartTooltip" class="chart-tooltip-box"></div>`;
+
+  // Attach Interactive Crosshair & Click Events
+  const svgEl = $('candleSvgElement');
+  const tooltip = $('chartTooltip');
+  const lineX = $('crosshairX');
+  const lineY = $('crosshairY');
+
+  if (svgEl && tooltip) {
+    svgEl.addEventListener('mousemove', (e) => {
+      const rect = svgEl.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
+
+      if (mouseX < padL || mouseX > W - padR) {
+        tooltip.style.display = 'none';
+        if (lineX) lineX.style.display = 'none';
+        if (lineY) lineY.style.display = 'none';
+        return;
+      }
+
+      // Find closest candle index
+      const ratio = (mouseX - padL) / plotW;
+      const idx = Math.min(data.length - 1, Math.max(0, Math.round(ratio * (data.length - 1))));
+      const d = data[idx];
+      const candleX = padL + (idx / (data.length - 1)) * plotW;
+      const candleY = padT + candleH - ((d.close - minP) / pRange) * candleH;
+
+      if (lineX) {
+        lineX.setAttribute('x1', candleX);
+        lineX.setAttribute('x2', candleX);
+        lineX.style.display = 'block';
+      }
+      if (lineY) {
+        lineY.setAttribute('y1', mouseY);
+        lineY.setAttribute('y2', mouseY);
+        lineY.style.display = 'block';
+      }
+
+      const chgVal = d.open > 0 ? (((d.close - d.open) / d.open) * 100).toFixed(2) : 0;
+      const chgSign = chgVal >= 0 ? '+' : '';
+      const chgColor = chgVal >= 0 ? '#10b981' : '#ef4444';
+      const fmtV = d.vol > 1000000 ? (d.vol/1000000).toFixed(2)+'M' : (d.vol/1000).toFixed(0)+'K';
+
+      tooltip.innerHTML = `
+        <div style="font-weight:700;color:#94a3b8;border-bottom:1px solid rgba(255,255,255,0.1);padding-bottom:3px;margin-bottom:4px">${d.date || 'দিন ' + (idx + 1)}</div>
+        <div>Open: <b>৳${d.open.toFixed(1)}</b> | High: <b>৳${d.high.toFixed(1)}</b></div>
+        <div>Low: <b>৳${d.low.toFixed(1)}</b> | Close: <b>৳${d.close.toFixed(1)}</b></div>
+        <div>পরিবর্তন: <b style="color:${chgColor}">${chgSign}${chgVal}%</b></div>
+        <div>ভলিউম: <b>${fmtV}</b> ${d.volSma20 ? `(গড়: ${(d.vol/d.volSma20).toFixed(1)}x)` : ''}</div>
+      `;
+
+      let tipX = candleX + 15;
+      if (tipX + 170 > W) tipX = candleX - 180;
+      tooltip.style.left = `${tipX}px`;
+      tooltip.style.top = `${Math.min(H - 120, Math.max(10, mouseY - 40))}px`;
+      tooltip.style.display = 'block';
+    });
+
+    svgEl.addEventListener('mouseleave', () => {
+      tooltip.style.display = 'none';
+      if (lineX) lineX.style.display = 'none';
+      if (lineY) lineY.style.display = 'none';
+    });
+
+    // Clicking anywhere on the chart triggers Volume Analysis for that candle!
+    svgEl.addEventListener('click', (e) => {
+      const rect = svgEl.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const ratio = (mouseX - padL) / plotW;
+      const idx = Math.min(data.length - 1, Math.max(0, Math.round(ratio * (data.length - 1))));
+      selectedCandleIndex = idx;
+      if (!isVolAnalysisOpen) {
+        toggleVolumeAnalysis();
+      } else {
+        updateVolumeAnalysisInfo(symbol, idx);
+      }
+    });
+  }
+
+  // Update volume analysis info if already open
+  if (isVolAnalysisOpen) {
+    updateVolumeAnalysisInfo(symbol, selectedCandleIndex);
+  }
 }
 
 // Devil's Playbook Drawer
