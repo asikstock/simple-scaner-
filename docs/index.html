@@ -1482,12 +1482,11 @@
           <th data-col="pscore">বাইং/সেলিং প্রেসার ⇅</th>
           <th>৫০ দিন চার্ট</th>
           <th data-col="pu">মূলধন / P/E ⇅</th>
-          <th data-col="rocket" class="th-rocket">🎰 রকেট গ্যাম্বল ⇅</th>
           <th>AI অডিট ও চার্ট</th>
         </tr>
       </thead>
       <tbody id="scanTbody">
-        <tr><td colspan="12" class="empty-state">ডেটা লোড হচ্ছে...</td></tr>
+        <tr><td colspan="11" class="empty-state">ডেটা লোড হচ্ছে...</td></tr>
       </tbody>
     </table>
   </div>
@@ -1814,9 +1813,9 @@ const TABS_CONFIG = [
   {
     k: '__rocket',
     label: '🎰 রকেট গ্যাম্বলার্স কর্নার',
-    title: '🎰 রকেট গ্যাম্বলার্স কর্নার (Ultra High-Risk / High-Reward Speculative Rockets)',
+    title: '🎰 রকেট গ্যাম্বলার্স কর্নার (শুধুমাত্র এন্ট্রি-যোগ্য হাই-রিস্ক রকেট শেয়ার)',
     desc: '⚠️ অতি-ঝুঁকিপূর্ণ সিন্ডিকেট রকেট শেয়ার: ক্ষুদ্র পরিশোধিত মূলধন (Paid-up < ৫০ কোটি), আকস্মিক ভলিউম স্পাইক (VR ≥ ১.৫x) এবং তীব্র বায়ার আধিপত্য। কঠোর স্টপ-লস (-৩.৫%) মেনে দ্রুত +১৮% থেকে +৩৫% রিটার্ন শিকারের বিশেষ কর্নার।',
-    filter: s => Boolean(getRocketData(s))
+    filter: s => { const rk = getRocketData(s); return Boolean(rk && rk.type === 'PRE_BLAST'); }
   },
   {
     k: '__prime',
@@ -2068,7 +2067,7 @@ async function loadData(silent = false) {
     console.error('Data load error:', e);
     // Never wipe existing rendered table on background silent sync errors
     if (!DATA || !DATA.stocks) {
-      $('scanTbody').innerHTML = `<tr><td colspan="12" class="empty-state">ডেটা লোড করতে সমস্যা হয়েছে: ${esc(e.message)}</td></tr>`;
+      $('scanTbody').innerHTML = `<tr><td colspan="11" class="empty-state">ডেটা লোড করতে সমস্যা হয়েছে: ${esc(e.message)}</td></tr>`;
     }
   }
 }
@@ -2271,7 +2270,7 @@ function renderTable() {
   const tbody = $('scanTbody');
   if (!list.length) {
     tbody.innerHTML = `<tr>
-      <td colspan="12" class="empty-state" style="padding:36px 16px;text-align:center">
+      <td colspan="11" class="empty-state" style="padding:36px 16px;text-align:center">
         <div style="width:44px;height:44px;margin:0 auto 10px;border-radius:12px;background:rgba(2,132,199,0.1);color:#0284c7;display:flex;align-items:center;justify-content:center;font-size:20px">
           🔍
         </div>
@@ -2376,6 +2375,27 @@ function renderTable() {
           </div>
         </div>
       `;
+    } else if (currentTab === '__rocket') {
+      const rk = getRocketData(s);
+      if (rk) {
+        planContent = `
+          <div style="display:flex;flex-direction:column;gap:3px;max-width:320px;text-align:left">
+            <div>
+              <span class="badge-tag" style="background:${rk.bg};color:${rk.badgeColor};border:1px solid ${rk.border};font-weight:800">
+                ${rk.badge}
+              </span>
+            </div>
+            <div style="font-size:11px;color:var(--text);line-height:1.35">${rk.desc}</div>
+            <div style="background:rgba(234,88,12,0.06);border:1px solid rgba(234,88,12,0.3);border-radius:6px;padding:4px 6px;font-family:var(--font-mono);font-size:10px;line-height:1.4">
+              <div style="display:flex;justify-content:space-between"><span>টার্গেট ১ / ২:</span><b style="color:var(--up)">${rk.target} | ${rk.targetExt}</b></div>
+              <div style="display:flex;justify-content:space-between"><span>কঠোর SL:</span><b style="color:var(--down)">${rk.sl}</b></div>
+              <div style="display:flex;justify-content:space-between"><span>ঝুঁকি সূচক:</span><b style="color:#ea580c">${rk.risk}</b></div>
+            </div>
+          </div>
+        `;
+      } else {
+        planContent = '<span class="plan-chip" style="color:var(--muted)">পর্যবেক্ষণ</span>';
+      }
     } else if (currentTab === '__syndicate') {
       const cl = s.cl || 0;
       const m20 = s.m20 || (cl * 0.95);
@@ -2494,23 +2514,6 @@ function renderTable() {
       <td>
         <div style="font-size:12px;font-weight:600">${puText}</div>
         <div style="font-size:11px;color:var(--muted)">${peText}</div>
-      </td>
-      <!-- Rocket Gamble TD -->
-      <td style="font-family:var(--font-mono);font-size:11px;text-align:center">
-        ${(() => {
-          const rk = getRocketData(s);
-          if (!rk) return '<span style="color:var(--muted)">–</span>';
-          return `<div style="display:flex;flex-direction:column;gap:3px;text-align:left;min-width:130px;padding:4px 6px;background:${rk.bg};border:1px solid ${rk.border};border-radius:6px">
-            <span style="font-weight:800;color:${rk.badgeColor};font-size:10.5px">
-              ${rk.badge}
-            </span>
-            <div style="font-size:10px;line-height:1.35;color:var(--text);font-family:var(--font-mono)">
-              <div>টার্গেট: <b style="color:var(--up)">${rk.target}</b></div>
-              <div>কঠোর SL: <b style="color:var(--down)">${rk.sl}</b></div>
-              <div>ঝুঁকি: <b style="color:#ea580c">${rk.risk}</b></div>
-            </div>
-          </div>`;
-        })()}
       </td>
       <td>
         <div style="display:flex;gap:4px;justify-content:center">
