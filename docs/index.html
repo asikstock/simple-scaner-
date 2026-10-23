@@ -1059,6 +1059,28 @@
       border-color: var(--accent);
     }
 
+    
+    /* Rocket Gamble Styling */
+    .btn-rocket-toggle {
+      background: linear-gradient(135deg, #fff7ed, #ffedd5) !important;
+      color: #ea580c !important;
+      border: 1px solid #fb923c !important;
+      font-weight: 700 !important;
+      cursor: pointer;
+    }
+    .btn-rocket-toggle:hover, .btn-rocket-toggle.active {
+      background: linear-gradient(135deg, #ea580c, #dc2626) !important;
+      color: #fff !important;
+      border-color: #ea580c !important;
+      box-shadow: 0 0 10px rgba(234, 88, 12, 0.4);
+    }
+    .th-rocket {
+      background: linear-gradient(135deg, rgba(234, 88, 12, 0.08), rgba(220, 38, 38, 0.06)) !important;
+      color: #ea580c !important;
+      font-weight: 700 !important;
+      white-space: nowrap;
+    }
+
     .empty-state {
       padding: 48px 16px;
       text-align: center;
@@ -1418,6 +1440,9 @@
         <button class="btn-view-all-stocks" id="btnToggleAllStocks" onclick="setTab('__all')">
           <span>🌐</span> <span>সব শেয়ার</span>
         </button>
+        <button class="btn-view-all-stocks btn-rocket-toggle" id="btnToggleRocket" onclick="setTab('__rocket')">
+          <span>🎰</span> <span>রকেট গ্যাম্বল</span>
+        </button>
       </div>
 
       <input type="search" class="filter-input" id="tblSearch" placeholder="কোড বা সেক্টর ফিল্টার করুন...">
@@ -1457,11 +1482,12 @@
           <th data-col="pscore">বাইং/সেলিং প্রেসার ⇅</th>
           <th>৫০ দিন চার্ট</th>
           <th data-col="pu">মূলধন / P/E ⇅</th>
+          <th data-col="rocket" class="th-rocket">🎰 রকেট গ্যাম্বল ⇅</th>
           <th>AI অডিট ও চার্ট</th>
         </tr>
       </thead>
       <tbody id="scanTbody">
-        <tr><td colspan="11" class="empty-state">ডেটা লোড হচ্ছে...</td></tr>
+        <tr><td colspan="12" class="empty-state">ডেটা লোড হচ্ছে...</td></tr>
       </tbody>
     </table>
   </div>
@@ -1714,6 +1740,69 @@ const PHASES = [
   { k: 'Markdown', bn: 'মার্কডাউন', c: 'var(--markdown)', d: 'দাম < SMA20 < SMA50 এবং SMA50 নিম্নমুখী — ক্রেতাহীন পতন।' }
 ];
 
+
+// Rocket Gamble Evaluation Engine
+function getRocketData(s) {
+  const pu = s.pu;
+  const isLowCap = (pu !== null && pu <= 500) || Boolean(s.lc);
+  const vr = s.vr || 1;
+  const vr5 = s.vr5 || 1;
+  const pbuy = s.pbuy || 0;
+  const psell = s.psell || 0;
+  const ch = s.ch || 0;
+  const r3 = s.r3 || 0;
+  const r5 = s.r5 || 0;
+  const fl = s.fl || [];
+
+  const isDormant = (s.idle > 0) || s.lk === 'dn';
+  const isDist = s.p === 'Distribution' || s.p === 'Markdown' || fl.includes('UTAD');
+
+  if (!isLowCap || isDormant || isDist) return null;
+
+  const hasSpike = vr >= 1.5 || vr5 >= 1.2 || (s.v > 80000);
+  const buyerDominance = (pbuy >= psell) || s.pst === 'buy';
+
+  if (!hasSpike && !buyerDominance) return null;
+
+  const cl = s.cl || 10;
+  const sl = (cl * 0.965).toFixed(1);
+  const target1 = (cl * 1.18).toFixed(1);
+  const target2 = (cl * 1.35).toFixed(1);
+
+  if (r3 < 9.0 && r5 < 16.0) {
+    return {
+      type: 'PRE_BLAST',
+      badge: '🚀 হট রকেট এন্ট্রি (Stage 1)',
+      badgeColor: '#ea580c',
+      bg: 'linear-gradient(135deg, #fff7ed, #ffedd5)',
+      border: '#fb923c',
+      risk: '৯/১০ (অতি উচ্চ)',
+      target: '৳' + target1 + ' (+১৮%)',
+      targetExt: '৳' + target2 + ' (+৩৫%)',
+      sl: '৳' + sl + ' (-৩.৫%)',
+      rrr: '১:৪.৫',
+      score: 95,
+      desc: 'ক্ষুদ্র মূলধন ও প্রাথমিক ভলিউম সঞ্চয়। বিস্ফোরণের পূর্ববর্তী প্রি-ব্লাস্ট এন্ট্রি জোন।'
+    };
+  } else if (r3 >= 9.0 || ch >= 4.5) {
+    return {
+      type: 'MOMENTUM_RIDE',
+      badge: '🔥 রকেট রাইড (Stage 2)',
+      badgeColor: '#c2410c',
+      bg: 'linear-gradient(135deg, #fefce8, #fef9c3)',
+      border: '#facc15',
+      risk: '৮.৫/১০ (উচ্চ)',
+      target: '৳' + target1 + ' (+১৫%)',
+      targetExt: '৳' + target2 + ' (+৩০%)',
+      sl: '৳' + sl + ' (-৩.৫%)',
+      rrr: '১:৩.০',
+      score: 88,
+      desc: 'রকেট চলমান। ট্রেইলিং স্টপ-লস কঠোরভাবে মেনে স্বল্পমেয়াদে রাইড করুন।'
+    };
+  }
+  return null;
+}
+
 const TABS_CONFIG = [
   {
     k: '__all',
@@ -1721,6 +1810,13 @@ const TABS_CONFIG = [
     title: 'ঢাকা স্টক এক্সচেঞ্জ (DSE) সব শেয়ার (All Market Stocks)',
     desc: 'বাজারের সকল নিবন্ধিত শেয়ারের পূর্ণাঙ্গ তালিকা। ফিল্টার বা সেক্টর পরিবর্তন করে যেকোনো শেয়ার খুঁজুন।',
     filter: () => true
+  },
+  {
+    k: '__rocket',
+    label: '🎰 রকেট গ্যাম্বলার্স কর্নার',
+    title: '🎰 রকেট গ্যাম্বলার্স কর্নার (Ultra High-Risk / High-Reward Speculative Rockets)',
+    desc: '⚠️ অতি-ঝুঁকিপূর্ণ সিন্ডিকেট রকেট শেয়ার: ক্ষুদ্র পরিশোধিত মূলধন (Paid-up < ৫০ কোটি), আকস্মিক ভলিউম স্পাইক (VR ≥ ১.৫x) এবং তীব্র বায়ার আধিপত্য। কঠোর স্টপ-লস (-৩.৫%) মেনে দ্রুত +১৮% থেকে +৩৫% রিটার্ন শিকারের বিশেষ কর্নার।',
+    filter: s => Boolean(getRocketData(s))
   },
   {
     k: '__prime',
@@ -1968,7 +2064,7 @@ async function loadData(silent = false) {
     loadHistoricalPrices();
   } catch(e) {
     console.error('Data load error:', e);
-    $('scanTbody').innerHTML = `<tr><td colspan="11" class="empty-state">ডেটা লোড করতে সমস্যা হয়েছে: ${esc(e.message)}</td></tr>`;
+    $('scanTbody').innerHTML = `<tr><td colspan="12" class="empty-state">ডেটা লোড করতে সমস্যা হয়েছে: ${esc(e.message)}</td></tr>`;
   }
 }
 
@@ -2063,6 +2159,10 @@ function renderTabs() {
   const btnAll = $('btnToggleAllStocks');
   if (btnAll) {
     btnAll.classList.toggle('active', currentTab === '__all');
+  }
+  const btnRocket = $('btnToggleRocket');
+  if (btnRocket) {
+    btnRocket.classList.toggle('active', currentTab === '__rocket');
   }
 
   TABS_CONFIG.forEach(cfg => {
@@ -2166,7 +2266,7 @@ function renderTable() {
   const tbody = $('scanTbody');
   if (!list.length) {
     tbody.innerHTML = `<tr>
-      <td colspan="11" class="empty-state" style="padding:36px 16px;text-align:center">
+      <td colspan="12" class="empty-state" style="padding:36px 16px;text-align:center">
         <div style="width:44px;height:44px;margin:0 auto 10px;border-radius:12px;background:rgba(2,132,199,0.1);color:#0284c7;display:flex;align-items:center;justify-content:center;font-size:20px">
           🔍
         </div>
@@ -2389,6 +2489,23 @@ function renderTable() {
       <td>
         <div style="font-size:12px;font-weight:600">${puText}</div>
         <div style="font-size:11px;color:var(--muted)">${peText}</div>
+      </td>
+      <!-- Rocket Gamble TD -->
+      <td style="font-family:var(--font-mono);font-size:11px;text-align:center">
+        ${(() => {
+          const rk = getRocketData(s);
+          if (!rk) return '<span style="color:var(--muted)">–</span>';
+          return `<div style="display:flex;flex-direction:column;gap:3px;text-align:left;min-width:130px;padding:4px 6px;background:${rk.bg};border:1px solid ${rk.border};border-radius:6px">
+            <span style="font-weight:800;color:${rk.badgeColor};font-size:10.5px">
+              ${rk.badge}
+            </span>
+            <div style="font-size:10px;line-height:1.35;color:var(--text);font-family:var(--font-mono)">
+              <div>টার্গেট: <b style="color:var(--up)">${rk.target}</b></div>
+              <div>কঠোর SL: <b style="color:var(--down)">${rk.sl}</b></div>
+              <div>ঝুঁকি: <b style="color:#ea580c">${rk.risk}</b></div>
+            </div>
+          </div>`;
+        })()}
       </td>
       <td>
         <div style="display:flex;gap:4px;justify-content:center">
@@ -3412,6 +3529,16 @@ function openAiAuditModal(code) {
   const finalWinRate = Math.min(92, Math.max(63, baseWinRate + dynamicBonus));
   const winRate = finalWinRate;
 
+  const rkAudit = getRocketData(s);
+  if (rkAudit) {
+    badgeText = '🎰 গ্যাম্বল রকেট সেটআপ (' + (rkAudit.type === 'PRE_BLAST' ? 'হট এন্ট্রি' : 'মোমেন্টাম রাইড') + ')';
+    badgeColor = '#ea580c';
+    operatorText = '⚠️ এটি একটি অতি-ঝুঁকিপূর্ণ লো-পেইডআপ (Paid-up: ' + (s.pu ? '৳' + (s.pu/10).toFixed(1) + ' কোটি' : 'ক্ষুদ্র') + ') স্পেকুলেটিভ স্টক। সিন্ডিকেট বা অপারেটর গ্রুপ ভলিউম সৃষ্টি করেছে (VR ' + vr + 'x)। কোনো দ্বিধা ছাড়া -৩.৫% টাইট স্টপ-লস কঠোরভাবে মেনে চলুন।';
+    slText = rkAudit.sl;
+    tp1 = rkAudit.target;
+    tp2 = rkAudit.targetExt;
+    rrr = rkAudit.rrr;
+  }
   $('aiDecisionBadge').textContent = badgeText;
   $('aiDecisionBadge').style.background = badgeColor;
   $('aiDecisionBadge').style.color = '#fff';
