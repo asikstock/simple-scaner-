@@ -1081,6 +1081,40 @@
       white-space: nowrap;
     }
 
+    
+    /* Target Progress & Horizon Styles */
+    .progress-cell-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 135px;
+      padding: 3px 6px;
+      background: rgba(2, 132, 199, 0.03);
+      border: 1px solid rgba(2, 132, 199, 0.15);
+      border-radius: 8px;
+      text-align: left;
+    }
+    .progress-bar-bg {
+      width: 100%;
+      height: 5px;
+      background: #e2e8f0;
+      border-radius: 4px;
+      overflow: hidden;
+      margin: 1px 0;
+    }
+    .progress-bar-fill {
+      height: 100%;
+      border-radius: 4px;
+      transition: width 0.3s ease;
+    }
+    .ai-prog-card {
+      background: linear-gradient(135deg, rgba(2, 132, 199, 0.04), rgba(16, 185, 129, 0.06));
+      border: 1px solid rgba(2, 132, 199, 0.25);
+      border-radius: 12px;
+      padding: 12px 14px;
+      margin-bottom: 2px;
+    }
+
     .empty-state {
       padding: 48px 16px;
       text-align: center;
@@ -1477,7 +1511,7 @@
           <th data-col="ch">পরিবর্তন % ⇅</th>
           <th class="th-left" data-col="p">ওয়াইকফ ফেজ ⇅</th>
           <th class="th-left">ট্রেড প্ল্যান ও অ্যাকশন</th>
-          <th data-col="rr">সেটআপ RRR ⇅</th>
+          <th data-col="rr" style="min-width:145px">সেটআপ RRR ও অগ্রগতি ⇅</th>
           <th data-col="vr">ভলিউম ও VR ⇅</th>
           <th data-col="pscore">বাইং/সেলিং প্রেসার ⇅</th>
           <th>৫০ দিন চার্ট</th>
@@ -1563,6 +1597,47 @@
         </div>
         <p style="font-size:12px;color:var(--text);line-height:1.45;margin:0" id="aiOperatorExpl">
           স্মার্ট মানি নিঃশব্দে শেয়ার শুষে নিচ্ছে...
+        </p>
+      </div>
+
+      <!-- Live Target Progress & Time Horizon Section -->
+      <div class="ai-prog-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <span style="font-size:12px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:5px">
+            <span>🎯</span> টার্গেট বাস্তবায়ন অগ্রগতি ও টাইম হরাইজন
+          </span>
+          <span id="aiProgHorizonTag" style="font-size:11px;font-weight:700;background:rgba(2,132,199,0.1);color:#0284c7;padding:2px 8px;border-radius:12px">
+            টেনটেটিভ: ১২–২৫ দিন
+          </span>
+        </div>
+        
+        <!-- Large Visual Progress Bar -->
+        <div style="width:100%;height:8px;background:#e2e8f0;border-radius:6px;overflow:hidden;margin-bottom:10px">
+          <div id="aiProgBarFill" style="width:45%;height:100%;background:linear-gradient(90deg,#0284c7,#10b981);border-radius:6px;transition:width 0.4s"></div>
+        </div>
+
+        <!-- 4-metric progress grid -->
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:6px;font-family:var(--font-mono);margin-bottom:8px">
+          <div style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:6px 8px">
+            <span style="font-size:10px;color:var(--muted);display:block">এন্ট্রি দর (বেস)</span>
+            <b style="font-size:12px;color:var(--text)" id="aiProgEntryPrice">৳0.0</b>
+          </div>
+          <div style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:6px 8px">
+            <span style="font-size:10px;color:var(--muted);display:block">বর্তমান দর</span>
+            <b style="font-size:12px;color:var(--accent)" id="aiProgCurrentPrice">৳0.0</b>
+          </div>
+          <div style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:6px 8px">
+            <span style="font-size:10px;color:var(--muted);display:block">টার্গেট অগ্রগতি</span>
+            <b style="font-size:12px;color:#059669" id="aiProgPctText">০%</b>
+          </div>
+          <div style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:6px 8px">
+            <span style="font-size:10px;color:var(--muted);display:block">সময় অতিক্রান্ত</span>
+            <b style="font-size:12px;color:#0284c7" id="aiProgDaysText">১ দিন</b>
+          </div>
+        </div>
+        
+        <p style="font-size:11.5px;color:var(--text);margin:0;line-height:1.4" id="aiProgInsight">
+          সেটআপটি বর্তমানে অন-ট্র্যাক আছে।
         </p>
       </div>
 
@@ -2197,6 +2272,82 @@ function sparklineSVG(arr, color = '#2563eb') {
   </svg>`;
 }
 
+
+// Setup Progress & Trading Horizon Engine
+function calculateProgress(s) {
+  const currentPrice = s.cl || 0;
+  const history = s.sp || [];
+  const daysInPhase = s.d || 1;
+  const originIndex = Math.max(0, history.length - 1 - daysInPhase);
+  const entryPrice = history[originIndex] || s.en || currentPrice;
+  const tg = s.tg || (entryPrice * 1.20);
+  const sl = s.sl || (entryPrice * 0.965);
+
+  let minDays = 15, maxDays = 30, setupName = 'সুইং এন্ট্রি';
+  if (s.p === 'Phase C') {
+    minDays = 12; maxDays = 25; setupName = 'Phase C স্প্রিং';
+  } else if (s.p === 'Phase D' || (s.fl && s.fl.includes('LPS'))) {
+    minDays = 20; maxDays = 40; setupName = 'Phase D ব্রেকআউট';
+  } else if (s.p === 'Phase B' || s.p === 'Re-accumulation') {
+    minDays = 15; maxDays = 35; setupName = 'একুমুলেশন রিটেস্ট';
+  } else if (s.pu && s.pu <= 500 && s.vr >= 1.5) {
+    minDays = 5; maxDays = 15; setupName = 'রকেট গ্যাম্বল';
+  }
+
+  const targetDist = tg - entryPrice;
+  const currentGain = currentPrice - entryPrice;
+  const gainPct = entryPrice > 0 ? ((currentGain / entryPrice) * 100).toFixed(1) : '0.0';
+  
+  let progressPct = 0;
+  if (targetDist > 0) {
+    progressPct = Math.round((currentGain / targetDist) * 100);
+  }
+
+  let statusBadge = '';
+  let barColor = '#0284c7';
+
+  if (currentPrice >= tg) {
+    progressPct = 100;
+    statusBadge = '🎯 টার্গেট স্পর্শ!';
+    barColor = '#10b981';
+  } else if (progressPct >= 70) {
+    statusBadge = `🔥 ${progressPct}% অর্জিত (+${gainPct}%)`;
+    barColor = '#059669';
+  } else if (progressPct >= 25) {
+    statusBadge = `🟢 ${progressPct}% অর্জিত (+${gainPct}%)`;
+    barColor = '#0284c7';
+  } else if (progressPct > 0) {
+    statusBadge = `🔵 ${progressPct}% শুরু (+${gainPct}%)`;
+    barColor = '#3b82f6';
+  } else if (currentPrice <= sl) {
+    statusBadge = `🚨 স্টপ-লস জোন (${gainPct}%)`;
+    barColor = '#ef4444';
+  } else {
+    statusBadge = `🟡 পুলব্যাক রিটেস্ট (${gainPct}%)`;
+    barColor = '#f59e0b';
+  }
+
+  const rrrNum = (s.rr != null && !isNaN(s.rr) && s.rr > 0) ? s.rr.toFixed(1) : '৩.০';
+
+  return {
+    entryPrice: Number(entryPrice.toFixed(1)),
+    currentPrice: Number(currentPrice.toFixed(1)),
+    tg: Number(tg.toFixed(1)),
+    sl: Number(sl.toFixed(1)),
+    daysElapsed: daysInPhase,
+    horizon: `${minDays}–${maxDays} দিন`,
+    minDays,
+    maxDays,
+    setupName,
+    progressPct: Math.max(0, Math.min(100, progressPct)),
+    gainPct: (Number(gainPct) > 0 ? '+' : '') + gainPct,
+    statusBadge,
+    barColor,
+    rrr: rrrNum,
+    isGoodRrr: Number(rrrNum) >= 2.0
+  };
+}
+
 function renderTable() {
   if (!DATA || !DATA.stocks) return;
 
@@ -2448,12 +2599,23 @@ function renderTable() {
       planContent = `<span class="plan-chip">${planText}</span>`;
     }
 
-    // RRR
-    let rrrHtml = '<span class="rrr-badge">–</span>';
-    if (s.rr != null && !isNaN(s.rr) && s.rr > 0) {
-      const isGood = s.rr >= 2.0;
-      rrrHtml = `<span class="rrr-badge ${isGood ? 'rrr-good' : ''}">১:${s.rr.toFixed(1)}</span>`;
-    }
+    // RRR & Target Progress
+    const prog = calculateProgress(s);
+    const rrrHtml = `
+      <div class="progress-cell-wrap" title="টেনটেটিভ সময়সীমা: ${prog.horizon} (বর্তমানে ${prog.daysElapsed} দিন চলছে)">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span class="rrr-badge ${prog.isGoodRrr ? 'rrr-good' : ''}">১:${prog.rrr}</span>
+          <span style="font-size:10px;font-family:var(--font-mono);color:var(--muted)">${prog.daysElapsed}ম দিন</span>
+        </div>
+        <div class="progress-bar-bg">
+          <div class="progress-bar-fill" style="width:${prog.progressPct}%;background:${prog.barColor}"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;font-size:9.5px;line-height:1.2">
+          <span style="font-weight:700;color:${prog.barColor};white-space:nowrap">${prog.statusBadge}</span>
+          <span style="color:var(--muted);white-space:nowrap">⏱ ${prog.horizon}</span>
+        </div>
+      </div>
+    `;
 
     // Volume & VR
     const vrVal = s.vr != null ? s.vr.toFixed(1) : '–';
@@ -3560,6 +3722,39 @@ function openAiAuditModal(code) {
   $('aiTarget1').textContent = tp1;
   $('aiTarget2').textContent = tp2;
   $('aiRrr').textContent = rrr;
+
+  // Populate Target Progress & Horizon in AI Audit
+  const pr = calculateProgress(s);
+  if ($('aiProgHorizonTag')) $('aiProgHorizonTag').textContent = 'টেনটেটিভ সময়: ' + pr.horizon;
+  if ($('aiProgBarFill')) {
+    $('aiProgBarFill').style.width = pr.progressPct + '%';
+    $('aiProgBarFill').style.background = pr.barColor;
+  }
+  if ($('aiProgEntryPrice')) $('aiProgEntryPrice').textContent = '৳' + pr.entryPrice;
+  if ($('aiProgCurrentPrice')) $('aiProgCurrentPrice').textContent = '৳' + pr.currentPrice;
+  if ($('aiProgPctText')) {
+    $('aiProgPctText').textContent = pr.progressPct + '% (' + pr.gainPct + '%)';
+    $('aiProgPctText').style.color = pr.barColor;
+  }
+  if ($('aiProgDaysText')) {
+    const remainingDays = Math.max(0, pr.maxDays - pr.daysElapsed);
+    $('aiProgDaysText').textContent = pr.daysElapsed + 'ম দিন (বাকি ~' + remainingDays + ' দিন)';
+  }
+  if ($('aiProgInsight')) {
+    let insightStr = '';
+    if (pr.progressPct >= 100) {
+      insightStr = '🎯 <b>টার্গেট সম্পন্ন:</b> স্টকটি কাঙ্ক্ষিত টার্গেটে পৌঁছেছে। নতুন করে বাই নয়, এখানে অন্তত ৫০–৭০% প্রফিট বুক করুন বা টাইট ট্রেইলিং স্টপ-লস ব্যবহার করুন।';
+    } else if (pr.progressPct >= 50) {
+      insightStr = '🔥 <b>অর্ধেক পথ অতিক্রম:</b> লক্ষ্যমাত্রার ' + pr.progressPct + '% অর্জিত হয়েছে। প্রাথমিক এন্ট্রি পয়েন্টে স্টপ-লস তুলে নিয়ে প্রফিট সুরক্ষিত (Breakeven) রাখুন।';
+    } else if (pr.progressPct > 0) {
+      insightStr = '🟢 <b>অন-ট্র্যাক অগ্রগতি:</b> স্টকটি ইতিবাচকভাবে টার্গেটের দিকে এগোচ্ছে (' + pr.gainPct + '%)। টেনটেটিভ ' + pr.horizon + '-এর মধ্যে টার্গেট ছোঁয়ার সম্ভাবনা প্রবল।';
+    } else if (pr.currentPrice <= pr.sl) {
+      insightStr = '🚨 <b>স্টপ-লস সতর্কতা:</b> স্টকটি স্টপ-লস সীমানার নিচে নেমেছে। ক্যাপিটাল রক্ষায় অনুশাসন মেনে এক্সিট নিন।';
+    } else {
+      insightStr = '🟡 <b>পুলব্যাক ও এন্ট্রি জোন:</b> স্টকটি বর্তমানে এন্ট্রি বেস বা পুলব্যাক সাপোর্ট জোনে অবস্থান করছে। স্টপ-লস (' + pr.sl + ') অক্ষত থাকায় এটি কম ঝুঁকিতে নতুন এন্ট্রির ভালো সুযোগ।';
+    }
+    $('aiProgInsight').innerHTML = insightStr;
+  }
 
   modal.style.display = 'flex';
 }
