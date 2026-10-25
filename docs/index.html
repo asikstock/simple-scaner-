@@ -1115,6 +1115,53 @@
       margin-bottom: 2px;
     }
 
+    
+    /* Top 3 Elite Spotlight Grid */
+    .top3-spotlight-wrap {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+    .top3-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .top3-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(0,0,0,0.08);
+    }
+    .top3-card-rank1 {
+      border: 1.5px solid #f59e0b;
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.05), rgba(251, 191, 36, 0.02));
+    }
+    .top3-card-rank2 {
+      border: 1.5px solid #0284c7;
+      background: linear-gradient(135deg, rgba(2, 132, 199, 0.05), rgba(56, 189, 248, 0.02));
+    }
+    .top3-card-rank3 {
+      border: 1.5px solid #10b981;
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.05), rgba(52, 211, 153, 0.02));
+    }
+    .badge-rank {
+      font-size: 11px;
+      font-weight: 800;
+      padding: 2px 8px;
+      border-radius: 12px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
     .empty-state {
       padding: 48px 16px;
       text-align: center;
@@ -1498,10 +1545,14 @@
     <!-- Booming Sub Filter Bar -->
   <div class="sub-filter-row" id="boomingSubFilterBar" style="display:none">
     <span style="font-weight:700;color:var(--accent)">🚀 স্টিলথ ফিল্টার:</span>
+    <button class="sub-filter-btn" id="btnSubTop3" onclick="setBoomingFilter('TOP3')" style="background:linear-gradient(135deg,#f59e0b,#ea580c);color:#fff;font-weight:700;border:none">⭐ আজকের সেরা ৩টি এন্ট্রি (Top 3 Elite)</button>
     <button class="sub-filter-btn active" id="btnSubAll" onclick="setBoomingFilter('ALL')">সব স্টিলথ শেয়ার</button>
     <button class="sub-filter-btn" id="btnSubBest" onclick="setBoomingFilter('BEST')">🔥 সেরা সেটআপ (Phase C / LPS)</button>
     <button class="sub-filter-btn" id="btnSubBuy" onclick="setBoomingFilter('BUY')">🟢 বায়ার ডমিনেন্স (Buyer > Seller)</button>
   </div>
+  
+  <!-- Booming Top 3 Spotlight Container -->
+  <div id="boomingTop3Container" class="top3-spotlight-wrap" style="display:none"></div>
   <div class="table-container" id="mainTableWrap">
     <table class="scan-table" id="scanTable">
       <thead>
@@ -2348,6 +2399,122 @@ function calculateProgress(s) {
   };
 }
 
+
+// Quantitative Booming Conviction Score (0-100)
+function getBoomingScore(s) {
+  const cl = s.cl || 0;
+  const m20 = s.m20 || cl;
+  const pbuy = s.pbuy || 0;
+  const psell = s.psell || 0;
+  const ptotal = (pbuy + psell) || 1;
+  const buyRatio = pbuy / ptotal;
+  
+  let score = 0;
+  // 1. Buyer Dominance (max 35)
+  score += Math.round(buyRatio * 25) + Math.min(10, Math.round(pbuy / 10));
+  
+  // 2. Proximity to 20 EMA Support (max 25)
+  const distFromM20 = (cl - m20) / (m20 || 1);
+  if (distFromM20 >= -0.02 && distFromM20 <= 0.03) score += 25;
+  else if (distFromM20 > 0.03 && distFromM20 <= 0.06) score += 18;
+  else if (distFromM20 > 0.06 && distFromM20 <= 0.10) score += 10;
+  else if (distFromM20 < -0.02) score += 8;
+
+  // 3. Volume Surge VR (max 20)
+  if (s.vr >= 2.0) score += 20;
+  else if (s.vr >= 1.5) score += 16;
+  else if (s.vr >= 1.0) score += 12;
+  else if (s.vr >= 0.7) score += 8;
+
+  // 4. Low-Cap Advantage (max 10)
+  if (s.pu && s.pu <= 35) score += 10;
+  else if (s.pu && s.pu <= 50) score += 8;
+  else if (s.pu && s.pu <= 100) score += 5;
+
+  // 5. Wyckoff Phase Bonus (max 10)
+  if (s.p === 'Phase C' || (s.fl && s.fl.includes('SPRING'))) score += 10;
+  else if (s.p === 'Phase D' || (s.fl && s.fl.includes('LPS'))) score += 8;
+  else if (s.p === 'Re-accumulation') score += 6;
+  else score += 4;
+
+  return score;
+}
+
+function renderBoomingTop3Spotlight(topStocks) {
+  const container = $('boomingTop3Container');
+  if (!container) return;
+  if (currentTab !== '__booming' || !topStocks || topStocks.length === 0) {
+    container.style.display = 'none';
+    return;
+  }
+  
+  container.style.display = 'grid';
+  const rankMeta = [
+    { rank: '🥇 ১ম সেরা এন্ট্রি', cls: 'top3-card-rank1', color: '#b45309', bg: '#fef3c7', tag: 'অত্যন্ত শক্তিশালী' },
+    { rank: '🥈 ২য় সেরা এন্ট্রি', cls: 'top3-card-rank2', color: '#0369a1', bg: '#e0f2fe', tag: 'হাই কনভিকশন' },
+    { rank: '🥉 ৩য় সেরা এন্ট্রি', cls: 'top3-card-rank3', color: '#047857', bg: '#d1fae5', tag: 'লো-রিস্ক সাপোর্ট' }
+  ];
+
+  container.innerHTML = topStocks.slice(0, 3).map((s, idx) => {
+    const rm = rankMeta[idx] || rankMeta[2];
+    const cl = s.cl || 0;
+    const chg = s.ch || 0;
+    const chgStr = (chg >= 0 ? '+' : '') + chg.toFixed(1) + '%';
+    const chgColor = chg >= 0 ? 'var(--up)' : 'var(--down)';
+    const pbuy = s.pbuy || 0;
+    const psell = s.psell || 0;
+    const vrStr = s.vr != null ? s.vr.toFixed(1) + 'x' : '–';
+    const pr = calculateProgress(s);
+    const score = getBoomingScore(s);
+
+    return `
+      <div class="top3-card ${rm.cls}">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span class="badge-rank" style="background:${rm.bg};color:${rm.color}">
+            ${rm.rank}
+          </span>
+          <span style="font-size:10.5px;font-weight:700;color:var(--accent);font-family:var(--font-mono)">
+            স্কোর: ${score}/১০০
+          </span>
+        </div>
+
+        <div style="display:flex;justify-content:space-between;align-items:baseline">
+          <div>
+            <span style="font-size:16px;font-weight:800;color:var(--text);cursor:pointer" onclick="openModernChart('${esc(s.c)}')">
+              ${esc(s.c)}
+            </span>
+            <span style="font-size:11px;color:var(--muted);margin-left:4px">${esc(s.s || '')}</span>
+          </div>
+          <div>
+            <span style="font-size:15px;font-weight:800;font-family:var(--font-mono);color:var(--text)">৳${cl.toFixed(1)}</span>
+            <span style="font-size:12px;font-weight:700;color:${chgColor};margin-left:4px">${chgStr}</span>
+          </div>
+        </div>
+
+        <div style="font-size:11px;color:var(--text);line-height:1.35;background:rgba(0,0,0,0.02);border:1px solid var(--border);border-radius:6px;padding:5px 7px">
+          <div>🟢 <b>বায়ার ডমিনেন্স:</b> ${pbuy} বনাম ${psell} (${pbuy > psell ? 'বায়ার সম্পূর্ণ নিয়ন্ত্রক' : 'ব্যালেন্সড'})</div>
+          <div>📊 <b>ভলিউম স্পাইক:</b> ${vrStr} · মূলধন: ৳${s.pu ? (s.pu/10).toFixed(1) : '–'} কোটি (লো-ক্যাপ)</div>
+        </div>
+
+        <div style="display:flex;justify-content:space-between;font-size:10px;font-family:var(--font-mono);background:rgba(2,132,199,0.04);border:1px solid rgba(2,132,199,0.2);border-radius:6px;padding:4px 6px">
+          <div>এন্ট্রি: <b>৳${(cl * 0.99).toFixed(1)} – ৳${cl.toFixed(1)}</b></div>
+          <div>কঠোর SL: <b style="color:var(--down)">৳${(cl * 0.965).toFixed(1)} (-৩.৫%)</b></div>
+          <div>টার্গেট: <b style="color:var(--up)">৳${(cl * 1.15).toFixed(1)} (+১৫%)</b></div>
+        </div>
+
+        <div style="display:flex;gap:6px;margin-top:2px">
+          <button onclick="openAiAuditModal('${esc(s.c)}')" class="btn-ai-audit" style="flex:1;padding:4px 8px;font-size:11px;justify-content:center">
+            <span>✨</span> AI অডিট রিপোর্ট
+          </button>
+          <button onclick="openModernChart('${esc(s.c)}')" style="background:var(--card);border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:11px;cursor:pointer;color:var(--text);font-weight:600">
+            চার্ট
+          </button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
 function renderTable() {
   if (!DATA || !DATA.stocks) return;
 
@@ -2382,6 +2549,30 @@ function renderTable() {
     if (q && !(s.c.toLowerCase().includes(q) || (s.s||'').toLowerCase().includes(q))) return false;
     return tabConfig.filter(s);
   });
+
+  // Render Top 3 Spotlight & Sub-Filters for Booming Operator Tab
+  if (currentTab === '__booming') {
+    const boomingSubBar = $('boomingSubFilterBar');
+    if (boomingSubBar) boomingSubBar.style.display = 'flex';
+    
+    // Compute sorted ranked list by score
+    const rankedBooming = [...list].sort((a, b) => getBoomingScore(b) - getBoomingScore(a));
+    rankedBooming.forEach((item, rIdx) => { item._top3Rank = rIdx < 3 ? (rIdx + 1) : null; });
+    renderBoomingTop3Spotlight(rankedBooming);
+
+    if (boomingSubFilter === 'TOP3') {
+      list = rankedBooming.slice(0, 3);
+    } else if (boomingSubFilter === 'BEST') {
+      list = list.filter(s => s.p === 'Phase C' || s.p === 'Phase D' || (s.fl && (s.fl.includes('SPRING') || s.fl.includes('LPS'))));
+    } else if (boomingSubFilter === 'BUY') {
+      list = list.filter(s => (s.pbuy || 0) > (s.psell || 0) && (s.pbuy || 0) >= 30);
+    }
+  } else {
+    const boomingSubBar = $('boomingSubFilterBar');
+    if (boomingSubBar) boomingSubBar.style.display = 'none';
+    const top3Cont = $('boomingTop3Container');
+    if (top3Cont) top3Cont.style.display = 'none';
+  }
 
   const totalTabCount = DATA.stocks.filter(s => {
     if (isLiquidOnly && !s.lq) return false;
@@ -2442,7 +2633,7 @@ function renderTable() {
     return;
   }
 
-  tbody.innerHTML = list.map(s => {
+  tbody.innerHTML = list.map((s, idx) => {
     // Phase
     let phaseHtml = '';
     if (s.p === 'Phase C') {
@@ -2643,7 +2834,14 @@ function renderTable() {
     const isLC = Boolean(s.lc || (s.pu != null && s.pu <= 50));
     const stealthBadge = isStealth ? '<span class="badge-tag tag-stealth">stealth</span>' : '';
     const lcBadge = isLC ? '<span class="badge-tag tag-lc">LC</span>' : '';
-    const tagsRow = (isStealth || isLC) ? `<div class="sym-tags">${stealthBadge}${lcBadge}</div>` : '';
+    let top3Badge = '';
+    if (currentTab === '__booming' && s._top3Rank) {
+      if (s._top3Rank === 1) top3Badge = '<span class="badge-tag" style="background:#fef3c7;color:#b45309;border:1px solid #f59e0b;font-weight:800">🥇 ১ম সেরা এন্ট্রি</span>';
+      else if (s._top3Rank === 2) top3Badge = '<span class="badge-tag" style="background:#e0f2fe;color:#0369a1;border:1px solid #0284c7;font-weight:800">🥈 ২য় সেরা এন্ট্রি</span>';
+      else if (s._top3Rank === 3) top3Badge = '<span class="badge-tag" style="background:#d1fae5;color:#047857;border:1px solid #10b981;font-weight:800">🥉 ৩য় সেরা এন্ট্রি</span>';
+    }
+
+    const tagsRow = (isStealth || isLC) ? `<div class="sym-tags">${top3Badge ? top3Badge + ' ' : ''}${stealthBadge}${lcBadge}</div>` : (top3Badge ? `<div class="sym-tags">${top3Badge}</div>` : '');
 
     return `<tr>
       <td class="td-sym">
@@ -3596,10 +3794,11 @@ function renderDrawerContent() {
 let boomingSubFilter = 'ALL';
 function setBoomingFilter(mode) {
   boomingSubFilter = mode;
-  ['btnSubAll', 'btnSubBest', 'btnSubBuy'].forEach(id => {
+  ['btnSubTop3', 'btnSubAll', 'btnSubBest', 'btnSubBuy'].forEach(id => {
     const el = $(id);
     if (el) el.classList.remove('active');
   });
+  if (mode === 'TOP3' && $('btnSubTop3')) $('btnSubTop3').classList.add('active');
   if (mode === 'ALL' && $('btnSubAll')) $('btnSubAll').classList.add('active');
   if (mode === 'BEST' && $('btnSubBest')) $('btnSubBest').classList.add('active');
   if (mode === 'BUY' && $('btnSubBuy')) $('btnSubBuy').classList.add('active');
