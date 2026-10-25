@@ -2,14 +2,19 @@ name: DSE ডেটা ও ফেজ আপডেট
 
 on:
   schedule:
-    # সব সময় UTC। ঢাকা = UTC+6। বাজার বন্ধ হয় ঢাকার ২:৩০ PM; চূড়ান্ত দাম আসার পর কয়েকবার চেষ্টা (GitHub-এর cron দেরি/বাদ পড়তে পারে, তাই একাধিক)।
-    - cron: '50 8 * * 0-4'    # ঢাকা ২:৫০ PM
-    - cron: '35 9 * * 0-4'    # ৩:৩৫ PM
-    - cron: '25 10 * * 0-4'   # ৪:২৫ PM
-    - cron: '40 11 * * 0-4'   # ৫:৪০ PM
-    - cron: '10 13 * * 0-4'   # ৭:১০ PM
-    - cron: '40 16 * * 0-4'   # ১০:৪০ PM
-    - cron: '25 1 * * 1-5'    # পরদিন সকাল ৭:২৫ (আগের রাতে যা বাদ পড়েছে)
+    # সব সময় UTC। ঢাকা = UTC+6।
+    # ১. ট্রেড চলাকালীন ইন্ট্রাডে লাইভ আপডেট:
+    - cron: '15 5 * * 0-4'    # ঢাকা সকাল ১১:১৫ AM (ট্রেড সেশন)
+    - cron: '45 6 * * 0-4'    # ঢাকা দুপুর ১২:৪৫ PM (মিড-সেশন)
+    - cron: '00 8 * * 0-4'    # ঢাকা দুপুর ২:০০ PM (ক্লোজিং প্রস্তুতি)
+    # ২. বাজার সমাপ্তির পর চূড়ান্ত EOD ক্লোজিং আপডেট:
+    - cron: '50 8 * * 0-4'    # ঢাকা দুপুর ২:৫০ PM
+    - cron: '35 9 * * 0-4'    # বিকাল ৩:৩৫ PM
+    - cron: '25 10 * * 0-4'   # বিকাল ৪:২৫ PM
+    - cron: '40 11 * * 0-4'   # সন্ধ্যা ৫:৪০ PM
+    - cron: '10 13 * * 0-4'   # রাত ৭:১০ PM
+    - cron: '40 16 * * 0-4'   # রাত ১০:৪০ PM
+    - cron: '25 1 * * 1-5'    # পরদিন সকাল ৭:২৫ AM (ব্যাকআপ)
   push:
     paths:
       - '.github/backfill-request.txt'
@@ -27,6 +32,8 @@ on:
 
 permissions:
   contents: write
+  pages: write
+  id-token: write
 
 concurrency:
   group: dse-data
@@ -95,3 +102,12 @@ jobs:
           git commit -m "data: $(date -u +%F\ %H:%M)"
           git pull --rebase -X ours origin main || { git rebase --abort || true; git pull --no-rebase -X ours origin main; }
           git push
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '.'
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
