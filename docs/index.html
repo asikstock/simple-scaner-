@@ -2003,10 +2003,10 @@ const TABS_CONFIG = [
     desc: '⚡ হাই-রিস্ক হাই-গেইন শিকারি সেটআপ: স্বল্প মূলধনী (Paid-up < ৫০ কোটি) ও লো ফ্রি-ফ্লোট শেয়ার, যেখানে দীর্ঘ ভলিউম ড্রাই-আপের পর স্মার্ট মানির প্রথম নীরব একুমুলেশন সম্পন্ন হয়েছে। সাধারণ পাবলিক ঢোকার আগেই এন্ট্রি নিন।',
     filter: s => {
       const isLC = Boolean(s.lc || (s.pu != null && s.pu <= 500));
-      const isPhase = (s.p === 'Phase B' || s.p === 'Phase C' || s.p === 'Phase D');
-      const inEntryZone = s.cl >= (s.m20 || 0) * 0.95 && s.cl <= (s.m20 || 0) * 1.05;
-      const hasBuy = (s.pbuy || 0) >= (s.psell || 0);
-      return isLC && isPhase && inEntryZone && hasBuy && !s.gn && (s.idle === 0 || !s.idle) && !s.lk;
+      const notBadPhase = s.p !== 'Distribution' && s.p !== 'Markdown';
+      const inEntryZone = s.cl >= (s.m20 || s.cl) * 0.92 && s.cl <= (s.m20 || s.cl) * 1.08;
+      const hasBuy = (s.pbuy || 0) >= (s.psell || 0) && (s.pbuy || 0) >= 15;
+      return isLC && notBadPhase && inEntryZone && hasBuy && !s.gn && (s.idle === 0 || !s.idle) && !s.lk;
     }
   },
   {
@@ -2696,6 +2696,7 @@ function renderTable() {
           <button class="btn primary" onclick="setTab('__booming')" style="padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer">
             🚀 বুমিং অপারেটর স্টিলথ দেখুন
           </button>
+          ${is3DayOnly ? '<button class="btn" onclick="$(\'chk3DayPersistence\').checked = false; renderTabs(); renderTable();" style="padding:6px 14px;font-size:12px;background:#e0f2fe;color:#0369a1;border:1px solid #0284c7;font-weight:700;cursor:pointer">🛡️ ৩-দিন ফিল্টার অফ করে নতুন ১–২ দিনের স্টক দেখুন</button>' : ''}
           ${isLiquidOnly ? '<button class="btn" onclick="$(\'chkLiquid\').checked = false; renderTabs(); renderTable();" style="padding:6px 14px;font-size:12px;cursor:pointer">সব শেয়ার আনলক করুন (লিকুইড ফিল্টার অফ)</button>' : ''}
         </div>
       </td>
