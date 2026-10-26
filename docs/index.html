@@ -1162,6 +1162,34 @@
       gap: 4px;
     }
 
+    
+    .tag-3d {
+      background: #dcfce7 !important;
+      color: #166534 !important;
+      border: 1px solid #4ade80 !important;
+      font-weight: 700;
+    }
+    .tag-spike {
+      background: linear-gradient(135deg, #ea580c, #dc2626) !important;
+      color: #fff !important;
+      border: 1px solid #ea580c !important;
+      font-weight: 800;
+    }
+    .tag-circuit {
+      background: #fee2e2 !important;
+      color: #991b1b !important;
+      border: 1px solid #f87171 !important;
+      font-weight: 700;
+    }
+    .quant-4layer-box {
+      background: linear-gradient(135deg, rgba(124, 58, 237, 0.04), rgba(2, 132, 199, 0.05));
+      border: 1px solid rgba(124, 58, 237, 0.25);
+      border-radius: 12px;
+      padding: 10px 14px;
+      font-size: 11.5px;
+      line-height: 1.5;
+    }
+
     .empty-state {
       padding: 48px 16px;
       text-align: center;
@@ -1532,7 +1560,11 @@
       </select>
       <label class="filter-chk">
         <input type="checkbox" id="chkLiquid" checked>
-        <span>শুধু লিকুইড শেয়ার (২০ দিনের গড় লেনদেন ≥ ৩০ লাখ টাকা)</span>
+        <span>শুধু লিকুইড শেয়ার</span>
+      </label>
+      <label class="filter-chk" style="color:var(--accent);font-weight:700">
+        <input type="checkbox" id="chk3DayPersistence">
+        <span>🛡️ ৩-দিন কনফার্মড সিগন্যাল (3D Persistence Filter)</span>
       </label>
     </div>
     <div class="filter-count" id="tblCount">দেখানো হচ্ছে: 0 / 1 টি স্টক</div>
@@ -2264,11 +2296,14 @@ window.setTab = function(tabKey) {
 function renderTabs() {
   if (!DATA || !DATA.stocks) return;
   const isLiquidOnly = $('chkLiquid').checked;
+  const is3DayOnly = $('chk3DayPersistence') ? $('chk3DayPersistence').checked : false;
   const sec = $('secFilter').value;
   const q = ($('tblSearch').value || $('topSearch').value || '').trim().toLowerCase();
 
+  
   const baseList = DATA.stocks.filter(s => {
     if (isLiquidOnly && !s.lq) return false;
+    if (is3DayOnly && (s.d || 0) < 3) return false;
     if (sec && s.s !== sec) return false;
     if (q && !(s.c.toLowerCase().includes(q) || (s.s||'').toLowerCase().includes(q))) return false;
     return true;
@@ -2324,7 +2359,22 @@ function sparklineSVG(arr, color = '#2563eb') {
 }
 
 
-// Setup Progress & Trading Horizon Engine
+// 14-Day Average True Range (ATR) Calculator
+function calculateATR14(s) {
+  const sp = s.sp || [];
+  if (sp.length < 5) return (s.cl || 10) * 0.025;
+  const n = Math.min(14, sp.length - 1);
+  let sumTR = 0;
+  for (let i = sp.length - n; i < sp.length; i++) {
+    sumTR += Math.abs(sp[i] - sp[i - 1]);
+  }
+  const rawAtr = sumTR / n;
+  const minAtr = (s.cl || 10) * 0.015;
+  const maxAtr = (s.cl || 10) * 0.06;
+  return Math.max(minAtr, Math.min(maxAtr, rawAtr));
+}
+
+// Setup Progress, ATR Dynamic Stop-Loss & 4-Layer Quant Engine
 function calculateProgress(s) {
   const currentPrice = s.cl || 0;
   const history = s.sp || [];
@@ -2332,7 +2382,18 @@ function calculateProgress(s) {
   const originIndex = Math.max(0, history.length - 1 - daysInPhase);
   const entryPrice = history[originIndex] || s.en || currentPrice;
   const tg = s.tg || (entryPrice * 1.20);
-  const sl = s.sl || (entryPrice * 0.965);
+
+  // ATR-Based Dynamic Stop-Loss (1.5x ATR buffer below entry)
+  const atr = calculateATR14(s);
+  const dynamicSl = Math.max(entryPrice * 0.90, entryPrice - (1.5 * atr));
+  const sl = dynamicSl;
+  const dynamicSlPct = (((entryPrice - dynamicSl) / (entryPrice || 1)) * 100).toFixed(1);
+
+  // 4-Layer Quant Flags
+  const is3DayConfirmed = daysInPhase >= 3;
+  const isVolSpike = (s.vr != null && s.vr >= 2.0) || (s.vr5 != null && s.vr5 >= 2.0 && (s.ch || 0) >= 1.5);
+  const isLowCap = Boolean(s.lc || (s.pu != null && s.pu <= 50));
+  const isCircuitProx = (s.ch || 0) >= 5.0 || (s.hi && currentPrice >= s.hi * 0.985);
 
   let minDays = 15, maxDays = 30, setupName = 'সুইং এন্ট্রি';
   if (s.p === 'Phase C') {
@@ -2395,7 +2456,14 @@ function calculateProgress(s) {
     statusBadge,
     barColor,
     rrr: rrrNum,
-    isGoodRrr: Number(rrrNum) >= 2.0
+    isGoodRrr: Number(rrrNum) >= 2.0,
+    atr: Number(atr.toFixed(2)),
+    dynamicSl: Number(dynamicSl.toFixed(1)),
+    dynamicSlPct,
+    is3DayConfirmed,
+    isVolSpike,
+    isLowCap,
+    isCircuitProx
   };
 }
 
@@ -2538,6 +2606,7 @@ function renderTable() {
     if (mainTableWrap) mainTableWrap.style.display = 'block';
   }
   const isLiquidOnly = $('chkLiquid').checked;
+  const is3DayOnly = $('chk3DayPersistence') ? $('chk3DayPersistence').checked : false;
   const sec = $('secFilter').value;
   const q = ($('tblSearch').value || $('topSearch').value || '').trim().toLowerCase();
 
@@ -2545,6 +2614,7 @@ function renderTable() {
 
   let list = DATA.stocks.filter(s => {
     if (isLiquidOnly && !s.lq) return false;
+    if (is3DayOnly && (s.d || 0) < 3) return false;
     if (sec && s.s !== sec) return false;
     if (q && !(s.c.toLowerCase().includes(q) || (s.s||'').toLowerCase().includes(q))) return false;
     return tabConfig.filter(s);
@@ -2841,7 +2911,13 @@ function renderTable() {
       else if (s._top3Rank === 3) top3Badge = '<span class="badge-tag" style="background:#d1fae5;color:#047857;border:1px solid #10b981;font-weight:800">🥉 ৩য় সেরা এন্ট্রি</span>';
     }
 
-    const tagsRow = (isStealth || isLC) ? `<div class="sym-tags">${top3Badge ? top3Badge + ' ' : ''}${stealthBadge}${lcBadge}</div>` : (top3Badge ? `<div class="sym-tags">${top3Badge}</div>` : '');
+    // 4-Layer Badges
+    const badge3D = (s.d >= 3) ? '<span class="badge-tag tag-3d" title="একটানা ৩ দিন ধরে সিগন্যাল বহাল (ভুয়া সিগন্যাল মুক্ত)">🛡️ 3D</span>' : '';
+    const badgeSpike = ((s.vr >= 2.0) || (s.vr5 >= 2.0 && (s.ch||0) >= 1.5)) ? '<span class="badge-tag tag-spike" title="অস্বাভাবিক ভলিউম ব্লাস্ট">🔥 স্পাইক</span>' : '';
+    const badgeCircuit = ((s.ch >= 5.0) || (s.hi && s.cl >= s.hi * 0.985)) ? '<span class="badge-tag tag-circuit" title="আপার সার্কিট প্রক্সিমিটি">🎯 সার্কিট</span>' : '';
+
+    const allBadges = [top3Badge, badge3D, badgeSpike, badgeCircuit, stealthBadge, lcBadge].filter(Boolean).join(' ');
+    const tagsRow = allBadges ? `<div class="sym-tags">${allBadges}</div>` : '';
 
     return `<tr>
       <td class="td-sym">
@@ -2913,6 +2989,7 @@ $('topSearch').addEventListener('input', (e) => {
 });
 $('secFilter').addEventListener('change', () => { renderTabs(); renderTable(); });
 $('chkLiquid').addEventListener('change', () => { renderTabs(); renderTable(); });
+if ($('chk3DayPersistence')) $('chk3DayPersistence').addEventListener('change', () => { renderTabs(); renderTable(); });
 $('btnRefresh').addEventListener('click', () => { loadData(); });
 $('btnScannerList').addEventListener('click', () => {
   window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -3917,13 +3994,27 @@ function openAiAuditModal(code) {
   $('aiWyckoffExpl').textContent = wyckoffText;
   $('aiOperatorExpl').textContent = operatorText;
   $('aiIdealEntry').textContent = idealEntry;
-  $('aiStopLoss').textContent = slText;
   $('aiTarget1').textContent = tp1;
+
+  const pr = calculateProgress(s);
+  // Populate 4-Layer Audit Box
+  if ($('aiAudit3dText')) {
+    $('aiAudit3dText').innerHTML = (s.d >= 3) ? '<b style="color:var(--up)">✅ ' + s.d + 'ম দিন (কনফার্মড)</b>' : '<b style="color:#d97706">⚡ ' + (s.d||1) + 'ম দিন (আর্লি)</b>';
+  }
+  if ($('aiAuditVolText')) {
+    $('aiAuditVolText').innerHTML = pr.isVolSpike ? '<b style="color:#ea580c">🔥 ব্লাস্ট (VR ' + (s.vr ? s.vr.toFixed(1) : '–') + 'x)</b>' : 'স্বাভাবিক ভলিউম';
+  }
+  if ($('aiAuditCapText')) {
+    $('aiAuditCapText').innerHTML = pr.isLowCap ? ('<b style="color:#2563eb">🏷️ লো-ক্যাপ (৳' + (s.pu ? (s.pu/10).toFixed(0) : '–') + ' কো)</b>' + (pr.isCircuitProx ? ' · <b style="color:#dc2626">🎯 সার্কিট রেডি</b>' : '')) : 'মিড/লার্জ ক্যাপ';
+  }
+  if ($('aiAuditAtrText')) {
+    $('aiAuditAtrText').innerHTML = 'ATR: ৳' + pr.atr + ' (SL: -' + pr.dynamicSlPct + '%)';
+  }
   $('aiTarget2').textContent = tp2;
   $('aiRrr').textContent = rrr;
 
-  // Populate Target Progress & Horizon in AI Audit
-  const pr = calculateProgress(s);
+  // Populate Target Progress, ATR Stop-Loss & 4-Layer Quant in AI Audit
+  $('aiStopLoss').textContent = '৳' + pr.dynamicSl + ' (-' + pr.dynamicSlPct + '%, 1.5x ATR)';
   if ($('aiProgHorizonTag')) $('aiProgHorizonTag').textContent = 'টেনটেটিভ সময়: ' + pr.horizon;
   if ($('aiProgBarFill')) {
     $('aiProgBarFill').style.width = pr.progressPct + '%';
