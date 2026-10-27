@@ -1405,6 +1405,156 @@
       50% { opacity: 0.5; }
       100% { opacity: 1; }
     }
+  
+    /* DSE Analyst Quant Model Styles */
+    .market-regime-strip {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 12px 18px;
+      border-radius: 12px;
+      margin: 14px 0;
+      background: var(--card);
+      border: 1px solid var(--line);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+      flex-wrap: wrap;
+    }
+    .market-regime-strip.regime-defense {
+      border-left: 5px solid #d97706;
+      background: linear-gradient(90deg, #fffbeb, #ffffff);
+    }
+    .market-regime-strip.regime-bull {
+      border-left: 5px solid #16a34a;
+      background: linear-gradient(90deg, #f0fdf4, #ffffff);
+    }
+    .mrs-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .mrs-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .mrs-badge.defense {
+      background: #fef3c7;
+      color: #b45309;
+      border: 1px solid #fde68a;
+    }
+    .mrs-badge.bull {
+      background: #dcfce7;
+      color: #15803d;
+      border: 1px solid #bbf7d0;
+    }
+    .mrs-dsex {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      color: var(--ink);
+    }
+    .mrs-right {
+      font-size: 12.5px;
+      color: var(--muted);
+      line-height: 1.4;
+      max-width: 650px;
+    }
+
+    .risk-tiers-strip {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 16px;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+    }
+    .rts-title {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      font-size: 13px;
+      color: var(--ink);
+      font-weight: 700;
+    }
+    .rts-sub {
+      font-size: 11px;
+      color: var(--muted);
+      font-weight: 400;
+    }
+    .rts-chips {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .rts-chip {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: flex-start;
+      padding: 5px 11px;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      background: var(--head);
+      cursor: pointer;
+      transition: all 0.15s ease;
+      font-family: var(--font-sans);
+      text-align: left;
+    }
+    .rts-chip:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.06);
+    }
+    .rts-chip.tier-extreme { border-color: #fecdd3; background: #fff1f2; }
+    .rts-chip.tier-extreme:hover { border-color: #e11d48; }
+    .rts-chip.tier-high { border-color: #fed7aa; background: #fff7ed; }
+    .rts-chip.tier-high:hover { border-color: #ea580c; }
+    .rts-chip.tier-elevated { border-color: #fef08a; background: #fefce8; }
+    .rts-chip.tier-elevated:hover { border-color: #ca8a04; }
+    .rts-chip.tier-baseline { border-color: #bbf7d0; background: #f0fdf4; }
+    .rts-chip.tier-baseline:hover { border-color: #16a34a; }
+    .rts-pill { font-size: 11.5px; font-weight: 700; }
+    .tier-extreme .rts-pill { color: #be123c; }
+    .tier-high .rts-pill { color: #c2410c; }
+    .tier-elevated .rts-pill { color: #a16207; }
+    .tier-baseline .rts-pill { color: #15803d; }
+    .rts-count { font-family: var(--font-mono); font-size: 13.5px; font-weight: 800; color: var(--ink); margin-top: 1px; }
+    .rts-drop { font-size: 10px; color: var(--muted); margin-top: 1px; }
+
+    .badge-risk {
+      display: inline-block;
+      padding: 3px 7px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      font-family: var(--font-mono);
+      text-align: center;
+      white-space: nowrap;
+    }
+    .badge-risk-1 { background: #fee2e2; color: #b91c1c; border: 1px solid #f87171; }
+    .badge-risk-2 { background: #ffedd5; color: #c2410c; border: 1px solid #fb923c; }
+    .badge-risk-3 { background: #fef9c3; color: #a16207; border: 1px solid #facc15; }
+    .badge-risk-4 { background: #dcfce7; color: #15803d; border: 1px solid #86efac; }
+
+    .badge-conf {
+      display: inline-block;
+      padding: 2.5px 7px;
+      border-radius: 5px;
+      font-size: 11px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .badge-conf-3 { background: #ede9fe; color: #6d28d9; border: 1px solid #c4b5fd; font-weight: 700; }
+    .badge-conf-2 { background: #e0f2fe; color: #0369a1; border: 1px solid #7dd3fc; }
+    .badge-conf-1 { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
+
   </style>
 </head>
 <body>
@@ -1477,6 +1627,47 @@
       <span>শেষ টিক: <span class="live-clock" id="liveClock">01:35:59 AM</span></span>
       <button class="live-badge-btn" id="btnLiveMode">
         <span>((•))</span> লাইভ মোড অন
+      </button>
+    </div>
+  </div>
+
+    <!-- DSEX Market Regime Strip (DSE Analyst Quant Model) -->
+  <div class="market-regime-strip regime-defense" id="marketRegimeStrip" style="display:none">
+    <div class="mrs-left">
+      <span class="mrs-badge defense" id="mrsBadge">🛡️ বেয়ারিশ ডিফেন্সিভ রেজিম</span>
+      <span class="mrs-dsex" id="mrsDsex">DSEX: <b>5,452.1</b> (২৬-সপ্তাহ SMA এর নিচে)</span>
+    </div>
+    <div class="mrs-right" id="mrsInsight">
+      💡 <b>কোয়ান্ট গাইডেন্স:</b> বাজার দীর্ঘমেয়াদি গড়ের নিচে থাকায় ব্রেকআউট অপেক্ষা <b>ওভারসোল্ড ওয়াশআউট ও ভলিউম ড্রাই-আপ</b> রিভার্সালের ঐতিহাসিক সফলতার হার ১৫.৭% বেশি।
+    </div>
+  </div>
+
+  <!-- Risk Extension Strip (DSE Analyst Overextension Tiers) -->
+  <div class="risk-tiers-strip" id="riskTiersStrip">
+    <div class="rts-title">
+      <span>🚨 <b>রিস্ক ফ্ল্যাগস (Overextension Tiers):</b></span>
+      <span class="rts-sub">SMA50 থেকে প্রসারণ ও ঐতিহাসিক পতন ঝুঁকি</span>
+    </div>
+    <div class="rts-chips">
+      <button class="rts-chip tier-extreme" onclick="setTab('__risk_extreme')">
+        <span class="rts-pill">Tier 1 · চরম ঝুঁকি</span>
+        <span class="rts-count" id="countTier1">0</span>
+        <span class="rts-drop">৫.৪x ড্রপ রেট (৫০%+)</span>
+      </button>
+      <button class="rts-chip tier-high" onclick="setTab('__risk_high')">
+        <span class="rts-pill">Tier 2 · উচ্চ ঝুঁকি</span>
+        <span class="rts-count" id="countTier2">0</span>
+        <span class="rts-drop">৩.০x ড্রপ রেট (৩০-৫০%)</span>
+      </button>
+      <button class="rts-chip tier-elevated" onclick="setTab('__risk_elevated')">
+        <span class="rts-pill">Tier 3 · সতর্ক জোন</span>
+        <span class="rts-count" id="countTier3">0</span>
+        <span class="rts-drop">১.৮x ড্রপ রেট (১৫-৩০%)</span>
+      </button>
+      <button class="rts-chip tier-baseline" onclick="setTab('__risk_baseline')">
+        <span class="rts-pill">Tier 4 · বেসলাইন</span>
+        <span class="rts-count" id="countTier4">0</span>
+        <span class="rts-drop">নিরাপদ সঞ্চয় (<১৫%)</span>
       </button>
     </div>
   </div>
@@ -1607,6 +1798,8 @@
           <th data-col="e_dryup" title="ভলিউম ড্রাই-আপ + ছোট বডি (অ্যাকুমুলেশন সংকেত)">ড্রাই-আপ ⇅</th>
           <th data-col="e_divergence" title="সেক্টর/ইনডেক্স ডাইভার্জেন্স (পাম্প সতর্কতা)">ডাইভার্জেন্স ⇅</th>
           <th data-col="e_uc_lowvol" title="সার্কিট ব্রেকার + কম ভলিউম (ফেক ডিমান্ড ফাঁদ)">UC লো-ভল ⇅</th>
+          <th data-col="rt" title="DSE Analyst স্টাইল ওভার-এক্সটেনশন রিস্ক টিয়ার (Tier 1-4)">ঝুঁকি টিয়ার ⇅</th>
+          <th data-col="conf" title="মাল্টি-কনফার্মেশন স্তর (১ থেকে ৩ স্তর)">কনফার্মেশন ⇅</th>
           <th data-col="pscore">বাইং/সেলিং প্রেসার ⇅</th>
           <th>৫০ দিন চার্ট</th>
           <th data-col="pu">মূলধন / P/E ⇅</th>
@@ -1973,6 +2166,35 @@ function getRocketData(s) {
 
 const TABS_CONFIG = [
   {
+    k: "__risk_extreme",
+    label: "🚨 চরম ঝুঁকি (Tier 1 Extreme)",
+    title: "🚨 চরম ঝুঁকি - ওভার-এক্সটেন্ডেড ডাম্প রিস্ক (Tier 1 Extreme Extension)",
+    desc: "বেসলাইনের চেয়ে ৫০%+ প্রসারিত শেয়ার। ঐতিহাসিকভাবে এদের ড্রপ রেট সাধারণের চেয়ে ৫.৪ গুণ বেশি। এখানে নতুন এন্ট্রি পরিহার করুন।",
+    filter: s => s.rt === 1
+  },
+  {
+    k: "__risk_high",
+    label: "🟠 উচ্চ ঝুঁকি (Tier 2 High)",
+    title: "🟠 উচ্চ ঝুঁকি - অতিরিক্ত প্রসারিত (Tier 2 High Extension)",
+    desc: "বেসলাইনের চেয়ে ৩০%-৫০% প্রসারিত শেয়ার। ৩ গুণ বেশি পতন ঝুঁকি। প্রফিট টেকিং ও স্ট্রিক্ট ট্রেইলিং স্টপ নিশ্চিত করুন।",
+    filter: s => s.rt === 2
+  },
+  {
+    k: "__risk_baseline",
+    label: "🟢 নিরাপদ বেসলাইন (Tier 4 Baseline)",
+    title: "🟢 নিরাপদ বেসলাইন ও কনসলিডেশন জোন (Tier 4 Baseline Accumulation)",
+    desc: "মুভিং এভারেজের কাছাকাছি বা নিরাপদ ভিত্তিভূমিতে অবস্থানরত স্টক। এখানে ডাউনসাইড রিস্ক সর্বনিম্ন।",
+    filter: s => s.rt === 4
+  },
+  {
+    k: "__conf_multi",
+    label: "⭐ ৩-স্তর কনফার্মেশন",
+    title: "⭐ বহুস্তর কনফার্মেশন সেটআপ (Triple Confluence Signals)",
+    desc: "প্যাটার্ন, ভলিউম স্পাইক (VR ≥ ২.০) এবং সাপোর্ট জোন/স্কুইজ—একসাথে ৩টি স্তরে কনফার্ম হওয়া শেয়ার। ঐতিহাসিকভাবে এদের উইন রেট ৬৭.১%।",
+    filter: s => (s.conf || 1) >= 3
+  },
+
+  {
     k: "__dryup",
     label: "🎯 ড্রাই-আপ (e_dryup)",
     title: "🎯 ভলিউম ড্রাই-আপ + ছোট বডি (Accumulation)",
@@ -2247,7 +2469,38 @@ async function loadData(silent = false) {
       });
     }
 
+    renderRegimeAndRisks();
     renderKpis();
+function renderRegimeAndRisks() {
+  if (!DATA) return;
+  const strip = $('marketRegimeStrip');
+  if (strip && DATA.market_regime) {
+    const mr = DATA.market_regime;
+    strip.style.display = 'flex';
+    strip.className = 'market-regime-strip ' + (mr.regime === 'BULL' ? 'regime-bull' : 'regime-defense');
+    const badge = $('mrsBadge');
+    if (badge) {
+      badge.className = 'mrs-badge ' + (mr.regime === 'BULL' ? 'bull' : 'defense');
+      badge.textContent = (mr.regime === 'BULL' ? '🚀 ' : '🛡️ ') + (mr.title || '');
+    }
+    const dsex = $('mrsDsex');
+    if (dsex) {
+      dsex.innerHTML = `DSEX: <b>${mr.close}</b> (২৬-সপ্তাহ SMA ${mr.sma26} এর <b>${mr.diff_pct > 0 ? '+' : ''}${mr.diff_pct}%</b> ${mr.diff_pct >= 0 ? 'ওপরে' : 'নিচে'})`;
+    }
+    const insight = $('mrsInsight');
+    if (insight) {
+      insight.innerHTML = `💡 <b>কোয়ান্ট গাইডেন্স:</b> ${mr.action_bn} <span style="display:inline-block;margin-left:6px;padding:2px 6px;background:var(--card);border:1px solid var(--line);border-radius:4px;font-size:11px">ওয়াশআউট এজ: <b>${mr.washout_edge}</b></span>`;
+    }
+  }
+  if (DATA.risk_summary) {
+    const rs = DATA.risk_summary;
+    if ($('countTier1')) $('countTier1').textContent = rs.tier1_extreme || 0;
+    if ($('countTier2')) $('countTier2').textContent = rs.tier2_high || 0;
+    if ($('countTier3')) $('countTier3').textContent = rs.tier3_elevated || 0;
+    if ($('countTier4')) $('countTier4').textContent = rs.tier4_baseline || 0;
+  }
+}
+
     renderTabs();
     renderTable();
 
@@ -3006,6 +3259,16 @@ function renderTable() {
       <td style="text-align:center;font-size:15px">${s.e_dryup ? '<span style="color:var(--up);font-weight:bold" title="ভলিউম ড্রাই-আপ + ছোট বডি (True)">✔</span>' : '<span style="color:var(--muted)" title="False">✘</span>'}</td>
       <td style="text-align:center;font-size:15px">${s.e_divergence ? '<span style="color:var(--up);font-weight:bold" title="ইনডেক্স ডাইভার্জেন্স (True)">✔</span>' : '<span style="color:var(--muted)" title="False">✘</span>'}</td>
       <td style="text-align:center;font-size:15px">${s.e_uc_lowvol ? '<span style="color:var(--down);font-weight:bold" title="সার্কিট ব্রেকার + কম ভলিউম (True)">✔</span>' : '<span style="color:var(--muted)" title="False">✘</span>'}</td>
+      <td>
+        <span class="badge-risk badge-risk-${s.rt || 4}" title="${esc(s.rtd || '')}">
+          ${s.rt === 1 ? '🔴 Tier 1 (' + (s.ext > 0 ? '+' : '') + s.ext + '%)' : (s.rt === 2 ? '🟠 Tier 2 (' + (s.ext > 0 ? '+' : '') + s.ext + '%)' : (s.rt === 3 ? '🟡 Tier 3 (' + (s.ext > 0 ? '+' : '') + s.ext + '%)' : '🟢 Tier 4 (' + (s.ext > 0 ? '+' : '') + s.ext + '%)'))}
+        </span>
+      </td>
+      <td style="text-align:center">
+        <span class="badge-conf badge-conf-${s.conf || 1}" title="${s.conf === 3 ? '৩-স্তর কনফার্মেশন (৬৭.১% ঐতিহাসিক উইন)' : (s.conf === 2 ? '২-স্তর কনফার্মেশন (৬৩.৫% উইন)' : '১-স্তর সাধারণ সিগন্যাল')}">
+          ${s.conf === 3 ? '⭐⭐⭐ ৩-স্তর' : (s.conf === 2 ? '⭐⭐ ২-স্তর' : '⭐ ১-স্তর')}
+        </span>
+      </td>
       <td>
         <div class="pressure-meter">
           <div class="pressure-text" style="color:${pStateColor}">${pscore} ${pStateText}</div>
