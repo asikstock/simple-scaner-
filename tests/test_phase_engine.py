@@ -133,4 +133,75 @@ assert {'gacc_lvl', 'gdist_lvl', 'glvl', 'gage', 'gbal', 'dist_age', 'dist_hi'} 
 assert F['glvl'].dropna().isin([0, 1, 2]).all()
 assert F.loc[F['phase'] == 'Markdown', 'glvl'].isna().all()
 
-print('সব টেস্ট পাস')
+# ৯. নতুন ফিল্টার ১: e_dryup — ভলিউম ড্রাই-আপ + ছোট বডি
+# শর্ত: (vdry <= 0.75) & (body_atr <= 0.5) & (atr_ratio <= 0.85)
+# গত ৫ দিনের মধ্যে অন্তত ৩ দিন শর্ত পূরণ হলে e_dryup = True
+n_ = 120
+c_ = np.full(n_, 100.0); o_ = c_.copy()
+h_ = c_ + 1.0; l_ = c_ - 1.0
+v_ = np.full(n_, 10000.0)
+v_[-10:] = 2000.0
+o_[-5:] = 100.0; c_[-5:] = 100.1
+h_[-20:] = c_[-20:] + 0.25; l_[-20:] = c_[-20:] - 0.25
+df_dry = pd.DataFrame({"date": pd.date_range("2024-01-01", periods=n_, freq="B").strftime("%Y-%m-%d"),
+                       "open": o_, "high": h_, "low": l_, "close": c_, "volume": v_})
+f_dry = base_features(df_dry)
+assert f_dry["e_dryup"].iloc[-1] == True, "ফিল্টার ১: e_dryup সত্য হয়নি"
+
+df_dry_fail = frame(n_, close=np.linspace(100, 200, n_), vol=np.full(n_, 10000.0))
+f_dry_fail = base_features(df_dry_fail)
+assert f_dry_fail["e_dryup"].iloc[-1] == False, "ফিল্টার ১: e_dryup মিথ্যা হওয়া উচিত ছিল"
+
+# ১০. নতুন ফিল্টার ২: e_divergence — সেক্টর/ইনডেক্স ডাইভার্জেন্স
+# fallback: শেয়ারের ১-দিনের রিটার্ন >= ৫%, ভলিউম রেশিও >= ৩.০
+n_ = 60
+c_ = np.full(n_, 100.0); v_ = np.full(n_, 1000.0)
+c_[-1] = 106.0; v_[-1] = 4000.0
+df_div = frame(n_, close=c_, vol=v_)
+f_div = base_features(df_div)
+assert f_div["e_divergence"].iloc[-1] == True, "ফিল্টার ২: e_divergence fallback সত্য হয়নি"
+
+c_fail = c_.copy(); c_fail[-1] = 102.0
+df_div_fail = frame(n_, close=c_fail, vol=v_)
+f_div_fail = base_features(df_div_fail)
+assert f_div_fail["e_divergence"].iloc[-1] == False, "ফিল্টার ২: e_divergence chg < 5% মিথ্যা হওয়া উচিত ছিল"
+
+# পূর্ণ সংস্করণ (DSEX ও সেক্টর ইনডেক্স থাকলে)
+df_div_full = frame(n_, close=c_, vol=v_)
+df_div_full["dsex_chg"] = 0.5
+df_div_full["sector_chg"] = 0.2
+f_div_full = base_features(df_div_full)
+assert f_div_full["e_divergence"].iloc[-1] == True, "ফিল্টার ২: e_divergence পূর্ণ সংস্করণ সত্য হয়নি"
+
+df_div_full_fail = frame(n_, close=c_, vol=v_)
+df_div_full_fail["dsex_chg"] = 2.5
+df_div_full_fail["sector_chg"] = 0.2
+f_div_full_fail = base_features(df_div_full_fail)
+assert f_div_full_fail["e_divergence"].iloc[-1] == False, "ফিল্টার ২: e_divergence বাজার অস্থিরতায় মিথ্যা হওয়া উচিত ছিল"
+
+# ১১. নতুন ফিল্টার ৩: e_uc_lowvol — সার্কিট ব্রেকার + কম ভলিউম
+# শর্ত: uc == 1 (chg >= 9.5%) এবং (vr < 1.0 অথবা vdry < 0.8)
+n_ = 70
+c_ = np.full(n_, 100.0); v_ = np.full(n_, 1000.0)
+c_[-1] = 109.8; v_[-1] = 500.0
+df_uc = frame(n_, close=c_, vol=v_)
+f_uc = base_features(df_uc)
+assert f_uc["e_uc_lowvol"].iloc[-1] == True, "ফিল্টার ৩: e_uc_lowvol (vr < 1.0) সত্য হয়নি"
+
+v2_ = np.full(n_, 10000.0); v2_[-10:] = 2000.0; v2_[-1] = 2500.0
+df_uc2 = frame(n_, close=c_, vol=v2_)
+f_uc2 = base_features(df_uc2)
+assert f_uc2["e_uc_lowvol"].iloc[-1] == True, "ফিল্টার ৩: e_uc_lowvol (vdry < 0.8) সত্য হয়নি"
+
+v3_ = np.full(n_, 1000.0); v3_[-1] = 3500.0
+df_uc3 = frame(n_, close=c_, vol=v3_)
+f_uc3 = base_features(df_uc3)
+assert f_uc3["e_uc_lowvol"].iloc[-1] == False, "ফিল্টার ৩: e_uc_lowvol উচ্চ ভলিউমে মিথ্যা হওয়া উচিত ছিল"
+
+c4_ = np.full(n_, 100.0); c4_[-1] = 102.0
+df_uc4 = frame(n_, close=c4_, vol=v_)
+f_uc4 = base_features(df_uc4)
+assert f_uc4["e_uc_lowvol"].iloc[-1] == False, "ফিল্টার ৩: e_uc_lowvol সার্কিট ছাড়া মিথ্যা হওয়া উচিত ছিল"
+
+print('সব টেস্ট পাস (নতুন ৩টি ফিল্টারের টেস্টসহ)')
+

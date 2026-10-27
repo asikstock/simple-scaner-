@@ -23,7 +23,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "scripts"))
 from phase_engine import Cfg, PHASES, build_panel, classify, load_all_prices, cfg_dict  # noqa: E402
 
-H = (10, 20, 40)
+H = (5, 10, 20, 40)
 COST = 0.005
 HOLD = 40
 
@@ -160,6 +160,20 @@ def main():
     out["stealth"] = {"all": {f"h{h}": block(st, h) for h in H},
                       "train": {"h20": block(st[st["date"] < cut], 20)}, "test": {"h20": block(st[st["date"] >= cut], 20)}}
 
+    # --- নতুন ৩টি ফিল্টারের পরিসংখ্যান (e_dryup, e_divergence, e_uc_lowvol) ---
+    def filter_stats(df, col):
+        trig = df[df[col].fillna(False).astype(bool)]
+        n = int(len(trig))
+        r5 = float(trig["r5"].mean() * 100) if (n > 0 and "r5" in trig and trig["r5"].notna().any()) else None
+        r20 = float(trig["r20"].mean() * 100) if (n > 0 and "r20" in trig and trig["r20"].notna().any()) else None
+        return {"n": n, "avg_ret_5d": r5, "avg_ret_20d": r20}
+
+    out["new_filters"] = {
+        "e_dryup": filter_stats(F[liq], "e_dryup"),
+        "e_divergence": filter_stats(F[liq], "e_divergence"),
+        "e_uc_lowvol": filter_stats(F[liq], "e_uc_lowvol"),
+    }
+
     # --- স্বয়ংক্রিয় মন্তব্য (সংখ্যা বদলালে নিজে বদলায়)
     notes = []
     robust, weak = [], []
@@ -206,6 +220,13 @@ def main():
         print(k, {a: (round(b, 2) if isinstance(b, float) else b) for a, b in v.items()})
     print("STEALTH ২০ দিন:", {a: (round(b, 2) if isinstance(b, float) else b) for a, b in out["stealth"]["all"]["h20"].items()},
           "TEST:", {a: (round(b, 2) if isinstance(b, float) else b) for a, b in out["stealth"]["test"]["h20"].items()})
+    print("\n=== New 3 Filters Backtest Stats ===")
+    print(f"{'ফিল্টার':<14} {'ট্রিগার (n)':>12} | {'৫ দিনের গড় রিটার্ন':>20} | {'২০ দিনের গড় রিটার্ন':>20}")
+    for fn, fst in out["new_filters"].items():
+        r5_str = f"{fst['avg_ret_5d']:+.2f}%" if fst['avg_ret_5d'] is not None else " - "
+        r20_str = f"{fst['avg_ret_20d']:+.2f}%" if fst['avg_ret_20d'] is not None else " - "
+        print(f"{fn:<14} {fst['n']:>12} | {r5_str:>20} | {r20_str:>20}")
+
     for n in notes:
         print("-", n)
 

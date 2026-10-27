@@ -1541,6 +1541,10 @@
       <!-- Direct Category Switcher for Easy Mobile Access -->
       <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
         <select class="category-select-pill" id="catDropdownSelect" onchange="setTab(this.value)">
+          <option value="__all">🌐 সব শেয়ার (All Stocks)</option>
+          <option value="__dryup">🎯 ড্রাই-আপ (e_dryup)</option>
+          <option value="__divergence">⚠️ ইনডেক্স ডাইভার্জেন্স (e_divergence)</option>
+          <option value="__uc_lowvol">🚨 UC লো-ভল ফাঁদ (e_uc_lowvol)</option>
           <option value="__booming">🚀 বুমিং অপারেটর স্টিলথ</option>
           <option value="__all">🌐 সব শেয়ার (All Stocks)</option>
           <option value="Phase C">🔥 Phase C (স্প্রিং)</option>
@@ -1600,6 +1604,9 @@
           <th class="th-left">ট্রেড প্ল্যান ও অ্যাকশন</th>
           <th data-col="rr" style="min-width:145px">সেটআপ RRR ও অগ্রগতি ⇅</th>
           <th data-col="vr">ভলিউম ও VR ⇅</th>
+          <th data-col="e_dryup" title="ভলিউম ড্রাই-আপ + ছোট বডি (অ্যাকুমুলেশন সংকেত)">ড্রাই-আপ ⇅</th>
+          <th data-col="e_divergence" title="সেক্টর/ইনডেক্স ডাইভার্জেন্স (পাম্প সতর্কতা)">ডাইভার্জেন্স ⇅</th>
+          <th data-col="e_uc_lowvol" title="সার্কিট ব্রেকার + কম ভলিউম (ফেক ডিমান্ড ফাঁদ)">UC লো-ভল ⇅</th>
           <th data-col="pscore">বাইং/সেলিং প্রেসার ⇅</th>
           <th>৫০ দিন চার্ট</th>
           <th data-col="pu">মূলধন / P/E ⇅</th>
@@ -1607,7 +1614,7 @@
         </tr>
       </thead>
       <tbody id="scanTbody">
-        <tr><td colspan="11" class="empty-state">ডেটা লোড হচ্ছে...</td></tr>
+        <tr><td colspan="14" class="empty-state">ডেটা লোড হচ্ছে...</td></tr>
       </tbody>
     </table>
   </div>
@@ -1883,7 +1890,7 @@ let DATA = null;
 let PRICES_MAP = {};
 let BT = null;
 let PB = null;
-let currentTab = localStorage.getItem('dse_last_tab') || '__booming';
+let currentTab = localStorage.getItem('dse_last_tab') || '__all';
 let sortCol = 'rr';
 let sortAsc = false;
 let selectedStock = 'MERCANBANK';
@@ -1966,7 +1973,28 @@ function getRocketData(s) {
 
 const TABS_CONFIG = [
   {
-    k: '__all',
+    k: "__dryup",
+    label: "🎯 ড্রাই-আপ (e_dryup)",
+    title: "🎯 ভলিউম ড্রাই-আপ + ছোট বডি (Accumulation)",
+    desc: "১০-দিনের গড় ভলিউম ≤ ৬০-দিনের গড়ের ৭৫%, ক্যান্ডেল বডি ≤ ০.৫ ATR এবং সংকুচিত অস্থিরতা। স্মার্ট মানি গোপনে স্টক জমা করছে।",
+    filter: s => Boolean(s.e_dryup)
+  },
+  {
+    k: "__divergence",
+    label: "⚠️ ডাইভার্জেন্স (e_divergence)",
+    title: "⚠️ সেক্টর/ইনডেক্স ডাইভার্জেন্স (Pump Warning)",
+    desc: "শেয়ার একা ৫%+ লাফিয়েছে (VR ≥ ৩.০), কিন্তু বাজার ও সেক্টর স্থির। কৃত্রিম পাম্পের ফেক র্যালি সতর্কতা।",
+    filter: s => Boolean(s.e_divergence)
+  },
+  {
+    k: "__uc_lowvol",
+    label: "🚨 UC লো-ভল ফাঁদ (e_uc_lowvol)",
+    title: "🚨 সার্কিট ব্রেকার + কম ভলিউম (Dump Trap)",
+    desc: "আপার সার্কিট হিট (≥ ৯.৫%) অথচ ভলিউম গড়ের নিচে (VR < ১.০ বা vdry < ০.৮)। ডিস্ট্রিবিউশন ডাম্পের ফাঁদ।",
+    filter: s => Boolean(s.e_uc_lowvol)
+  },
+  {
+    k: "__all",
     label: '🌐 সব শেয়ার (All)',
     title: 'ঢাকা স্টক এক্সচেঞ্জ (DSE) সব শেয়ার (All Market Stocks)',
     desc: 'বাজারের সকল নিবন্ধিত শেয়ারের পূর্ণাঙ্গ তালিকা। ফিল্টার বা সেক্টর পরিবর্তন করে যেকোনো শেয়ার খুঁজুন।',
@@ -2733,7 +2761,40 @@ function renderTable() {
 
     // Action plan
     let planContent = '';
-    if (currentTab === '__booming') {
+    if (currentTab === "__dryup") {
+      planContent = `
+        <div style="display:flex;flex-direction:column;gap:3px;max-width:320px;text-align:left">
+          <div><span class="badge-tag" style="background:#d1fae5;color:#047857;border:1px solid #10b981;font-weight:700">🎯 ড্রাই-আপ ওয়াচলিস্ট</span></div>
+          <div style="font-size:11px;color:var(--text);line-height:1.3">ভলিউম ড্রাই-আপ ও ছোট ক্যান্ডেল বডি। প্রাতিষ্ঠানিক সঞ্চয় (Phase A/B) চলছে।</div>
+          <div style="background:var(--card);border:1px solid var(--border);border-radius:6px;padding:4px 6px;font-family:var(--font-mono);font-size:10px">
+            <div style="display:flex;justify-content:space-between"><span>পরামর্শ:</span><b style="color:var(--accent)">ওয়াচলিস্টে রাখুন</b></div>
+            <div style="display:flex;justify-content:space-between"><span>একশন:</span><b style="color:var(--accent)">স্প্রিং টেস্টের অপেক্ষা</b></div>
+          </div>
+        </div>
+      `;
+    } else if (currentTab === "__divergence") {
+      planContent = `
+        <div style="display:flex;flex-direction:column;gap:3px;max-width:320px;text-align:left">
+          <div><span class="badge-tag" style="background:#fef3c7;color:#92400e;border:1px solid #f59e0b;font-weight:700">⚠️ ইনডেক্স ডাইভার্জেন্স</span></div>
+          <div style="font-size:11px;color:var(--text);line-height:1.3">শেয়ার একা ৫%+ লাফিয়েছে কিন্তু বাজার/সেক্টর স্থির। ফেক র্যালি সতর্কতা।</div>
+          <div style="background:var(--card);border:1px solid var(--border);border-radius:6px;padding:4px 6px;font-family:var(--font-mono);font-size:10px">
+            <div style="display:flex;justify-content:space-between"><span>পরামর্শ:</span><b style="color:#d97706">FOMO এড়িয়ে চলুন</b></div>
+            <div style="display:flex;justify-content:space-between"><span>একশন:</span><b style="color:#d97706">নতুন এন্ট্রি নিষেধ</b></div>
+          </div>
+        </div>
+      `;
+    } else if (currentTab === "__uc_lowvol") {
+      planContent = `
+        <div style="display:flex;flex-direction:column;gap:3px;max-width:320px;text-align:left">
+          <div><span class="badge-tag" style="background:#fee2e2;color:#991b1b;border:1px solid #f87171;font-weight:700">🚨 UC লো-ভল ডাম্প ফাঁদ</span></div>
+          <div style="font-size:11px;color:#991b1b;line-height:1.3;font-weight:600">সার্কিট হিট করেছে অথচ ভলিউম ড্রপ (VR < ১.০)। ডিস্ট্রিবিউশন ফাঁদ।</div>
+          <div style="background:#fef2f2;border:1px solid #fca5a5;border-radius:6px;padding:4px 6px;font-family:var(--font-mono);font-size:10px">
+            <div style="display:flex;justify-content:space-between"><span>পরামর্শ:</span><b style="color:#dc2626">প্রফিট লক / সেল</b></div>
+            <div style="display:flex;justify-content:space-between"><span>একশন:</span><b style="color:#dc2626">সম্পূর্ণ প্রস্থান</b></div>
+          </div>
+        </div>
+      `;
+    } else if (currentTab === "__booming") {
       const cl = s.cl || 0;
       const m20 = s.m20 || (cl * 0.95);
       const hi = s.hi || (cl * 1.05);
@@ -2942,6 +3003,9 @@ function renderTable() {
         <div style="font-family:var(--font-mono);font-size:12px;font-weight:600">${volStr}</div>
         <div style="font-size:11px;color:${vrColor}">VR ${vrVal}</div>
       </td>
+      <td style="text-align:center;font-size:15px">${s.e_dryup ? '<span style="color:var(--up);font-weight:bold" title="ভলিউম ড্রাই-আপ + ছোট বডি (True)">✔</span>' : '<span style="color:var(--muted)" title="False">✘</span>'}</td>
+      <td style="text-align:center;font-size:15px">${s.e_divergence ? '<span style="color:var(--up);font-weight:bold" title="ইনডেক্স ডাইভার্জেন্স (True)">✔</span>' : '<span style="color:var(--muted)" title="False">✘</span>'}</td>
+      <td style="text-align:center;font-size:15px">${s.e_uc_lowvol ? '<span style="color:var(--down);font-weight:bold" title="সার্কিট ব্রেকার + কম ভলিউম (True)">✔</span>' : '<span style="color:var(--muted)" title="False">✘</span>'}</td>
       <td>
         <div class="pressure-meter">
           <div class="pressure-text" style="color:${pStateColor}">${pscore} ${pStateText}</div>

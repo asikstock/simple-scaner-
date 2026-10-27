@@ -72,6 +72,17 @@ class Cfg:
     dist_win: int = 10
     dist_vr: float = 2.0         # UTAD/SOW-এ "উচ্চ ভলিউম": VR ≥ ২.০
     smc_win: int = 30            # CHOCH-এর পর কতদিন পর্যন্ত মিটিগেশন এন্ট্রি বৈধ
+    # ---- নতুন ৩টি ফিল্টার ----
+    dryup_win: int = 5           # ভলিউম ড্রাই-আপ উইন্ডো (দিন)
+    dryup_min_days: int = 3      # উইন্ডোতে ন্যূনতম যত দিন সত্য হতে হবে
+    dryup_vdry_max: float = 0.75 # ১০-দিনের গড় ভলিউম ÷ ৬০-দিনের গড় ভলিউম ≤ ০.৭৫
+    dryup_body_atr_max: float = 0.5 # ক্যান্ডেল বডি ÷ ATR14 ≤ ০.৫
+    dryup_atr_ratio_max: float = 0.85 # ATR14 ÷ ৬০-দিনের গড় ATR14 ≤ ০.৮৫
+    div_chg_min: float = 5.0     # শেয়ারের ১-দিনের রিটার্ন ≥ ৫%
+    div_index_chg_max: float = 1.0 # DSEX ও সেক্টর রিটার্ন ≤ ১%
+    div_vr_min: float = 3.0      # ভলিউম রেশিও ≥ ৩.০
+    uc_lowvol_vr_max: float = 1.0 # আজকের ভলিউম রেশিও (vr) < ১.০
+    uc_lowvol_vdry_max: float = 0.8 # ১০-দিন গড় ভলিউম ÷ ৬০-দিন গড় ভলিউম (vdry) < ০.৮
     # ---- তারল্য ----
     min_value: float = 3e6       # ২০ দিনের গড় দৈনিক লেনদেন (টাকা): এর নিচে অলিকুইড
     max_zero_days: int = 4
@@ -209,6 +220,9 @@ def base_features(df, cfg=Cfg()):
     o, h, l, c, v = df["open"], df["high"], df["low"], df["close"], df["volume"]
     pc = c.shift()
     f = pd.DataFrame({"date": df["date"], "open": o, "high": h, "low": l, "close": c, "volume": v, "chg": (c / pc - 1) * 100})
+    for _extra in ("dsex_chg", "sector_chg"):
+        if _extra in df.columns:
+            f[_extra] = df[_extra]
     f["sma20"], f["sma50"], f["sma100"] = c.rolling(20).mean(), c.rolling(50).mean(), c.rolling(100).mean()
     f["ema9"] = c.ewm(span=9, adjust=False).mean()
     f["slope"] = f["sma50"] / f["sma50"].shift(10) - 1
@@ -261,12 +275,25 @@ def base_features(df, cfg=Cfg()):
     sow = (((vr >= 2.0) & (upper_wick >= 2 * body) & (f["close_pos"] <= 1 / 3) & up_ctx)
            | ((c < f["lo_r"]) & (vr >= cfg.dist_vr) & up_ctx & rng_ok))
     early_dry = (f["atr_ratio"] <= cfg.squeeze_ratio) & (vr <= 0.75) & rng_ok & (c >= f["lo_r"] * 0.98) & (f["vb"] >= -0.2)
+    # --- নতুন ফিল্টারসমূহ ---
+    dryup_day = (f["vdry"] <= cfg.dryup_vdry_max) & (f["body_atr"] <= cfg.dryup_body_atr_max) & (f["atr_ratio"] <= cfg.dryup_atr_ratio_max)
+    dryup = dryup_day.astype(int).rolling(cfg.dryup_win, min_periods=cfg.dryup_min_days).sum() >= cfg.dryup_min_days
+    if "dsex_chg" in f.columns and "sector_chg" in f.columns and f["dsex_chg"].notna().any() and f["sector_chg"].notna().any():
+        divergence = (f["chg"] >= cfg.div_chg_min) & (f["vr"] >= cfg.div_vr_min) & (f["dsex_chg"] <= cfg.div_index_chg_max) & (f["sector_chg"] <= cfg.div_index_chg_max)
+    elif "dsex_chg" in f.columns and f["dsex_chg"].notna().any():
+        divergence = (f["chg"] >= cfg.div_chg_min) & (f["vr"] >= cfg.div_vr_min) & (f["dsex_chg"] <= cfg.div_index_chg_max)
+    else:
+        divergence = (f["chg"] >= cfg.div_chg_min) & (f["vr"] >= cfg.div_vr_min)
+    uc_lowvol = (f["uc"] == 1) & ((vr < cfg.uc_lowvol_vr_max) | (f["vdry"] < cfg.uc_lowvol_vdry_max))
     ev = lambda s: s.fillna(False).to_numpy(dtype=bool)
-    for nm, fl_ in (("e_stealth", stealth), ("e_early", early_dry), ("e_sc", sc), ("e_spring", spring), ("e_sos", sos), ("e_bc", bc), ("e_utad", utad), ("e_sow", sow)):
+    for nm, fl_ in (("e_stealth", stealth), ("e_early", early_dry), ("e_dryup", dryup), ("e_divergence", divergence), ("e_uc_lowvol", uc_lowvol), ("e_sc", sc), ("e_spring", spring), ("e_sos", sos), ("e_bc", bc), ("e_utad", utad), ("e_sow", sow)):
         f[nm] = ev(fl_)
     ha, la, ca = h.to_numpy(float), l.to_numpy(float), c.to_numpy(float)
     f["stealth_age"] = _age(ev(stealth))
     f["early_age"] = _age(ev(early_dry))
+    f["dryup_age"] = _age(ev(dryup))
+    f["div_age"] = _age(ev(divergence))
+    f["uc_lowvol_age"] = _age(ev(uc_lowvol))
     f["sc_age"] = _age(ev(sc))
     f["sc_low"] = _val_at_last(ev(sc), la, cfg.sc_win)
     f["spr_age"] = _age(ev(spring))
